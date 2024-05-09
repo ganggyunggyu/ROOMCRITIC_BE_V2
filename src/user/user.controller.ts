@@ -32,10 +32,14 @@ export class UserController {
     const accessToken = await this.authService.createAccessToken(user);
     const refreshToken = await this.authService.createRefreshToken(user);
     const isLoggedIn = true;
-    const { email, displayName } = user;
-    return { accessToken, refreshToken, email, displayName, isLoggedIn };
+    // const { email, displayName } = user;
+    return { accessToken, refreshToken, userInfo: user, isLoggedIn };
   }
 
+  @Post('auth/logout')
+  async logout(@Body('userId') userId: string) {
+    return this.authService.logout(userId);
+  }
   //Body로 refresh-token을 받아서 검증하여 access-token 재발급
   @Post('/auth/access-token')
   @UseGuards(JwtRefreshGuard)

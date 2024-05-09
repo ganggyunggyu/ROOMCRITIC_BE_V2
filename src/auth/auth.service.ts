@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { UserService } from 'src/user/user.service';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Err } from 'src/shared/error';
 import { JwtService } from '@nestjs/jwt';
 import * as CryptoJS from 'crypto-js';
@@ -32,7 +32,7 @@ export class AuthService {
     //JWT 표준과 일관성 유지를 위해 sub라는 속성 이름으로 userId를 보관
     const accessToken = this.jwtService.sign(payload, {
       secret: process.env.JWT_SECRET,
-      expiresIn: '600s',
+      expiresIn: '10s',
     });
     return accessToken;
   }
@@ -107,5 +107,17 @@ export class AuthService {
     );
     const access_token = await this.createAccessToken(user);
     return { access_token, refresh_token: { refresh_token, tokenExp } };
+  }
+
+  async logout(userId: string) {
+    const _id = new Types.ObjectId(userId);
+    const result = await this.userModel.findByIdAndUpdate(
+      _id,
+      {
+        refreshToken: null,
+      },
+      { new: true },
+    );
+    return result;
   }
 }
