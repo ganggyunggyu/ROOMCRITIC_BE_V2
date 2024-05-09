@@ -9,17 +9,13 @@ import { MovieModule } from './movie/movie.module';
 import { ContentModule } from './content/content.module';
 import { UserModule } from './user/user.module';
 import { ReviewModule } from './review/review.module';
-import { SessionModule } from 'nestjs-session';
+
 import { GenreScoreModule } from './genre-score/genre-score.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     MongooseModule.forRoot(process.env.MONGO_URL),
-    SessionModule.forRoot({
-      session: { secret: process.env.SESSION_SECRET },
-    }),
-
     AuthModule,
     TvModule,
     MovieModule,
