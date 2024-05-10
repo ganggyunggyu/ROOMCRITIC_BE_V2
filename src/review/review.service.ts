@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Review } from './schema/review.schema';
 import { Model, Types } from 'mongoose';
@@ -8,10 +8,15 @@ import {
   ReviewUpdateDTO,
 } from './dto/request';
 import { lessCursorQuery } from 'src/shared/paginate/cursor-paginate';
+import { ReviewLike } from './schema/review-like.schema';
+import { Err } from 'src/shared/error';
 
 @Injectable()
 export class ReviewService {
-  constructor(@InjectModel('Review') private reviewModel: Model<Review>) {}
+  constructor(
+    @InjectModel('Review') private reviewModel: Model<Review>,
+    @InjectModel('ReviewLike') private reviewLikeModel: Model<ReviewLike>,
+  ) {}
 
   async findUserReviews(
     userId: string,
@@ -51,14 +56,13 @@ export class ReviewService {
     contentId: string,
   ) {
     const query = lessCursorQuery(cursor);
+    const objectIdByContentId = new Types.ObjectId(contentId);
     const result = await this.reviewModel
-      .find(
-        {
-          contentType: contentType,
-          contentId: contentId,
-        },
-        query,
-      )
+      .find({
+        contentType: contentType,
+        contentId: objectIdByContentId,
+        ...query,
+      })
       .limit(limit)
       .sort({ _id: -1 })
       .exec();
@@ -101,6 +105,75 @@ export class ReviewService {
       .limit(limit)
       .sort({ _id: -1 })
       .exec();
+    return result;
+  }
+
+  // 테이블이 없는 경우 -> 좋아요 실어요 모두 없음
+  // 테이블이 있는 경우
+  //isLike true
+  //isLike false
+
+  async deleteDocument(_id) {
+    await this.reviewLikeModel.findByIdAndDelete(_id);
+  }
+
+  async likeReview(reviewId: string, userId: string) {
+    const isReviewLike = await this.reviewLikeModel.findOne({
+      reviewId: reviewId,
+      userId: userId,
+    });
+
+    if (!isReviewLike) {
+      await this.reviewLikeModel.create({
+        reviewId: reviewId,
+        userId: userId,
+        isLike: true,
+      });
+      return true;
+    }
+
+    if (isReviewLike.isLike === true) {
+      await isReviewLike.deleteOne();
+      throw new NotFoundException(Err.REVIEW.NOT_FOUND);
+    }
+    if (isReviewLike.isLike === false) {
+      await isReviewLike.updateOne({ isLike: true });
+      return true;
+    }
+  }
+
+  async dislikeReview(reviewId: string, userId: string) {
+    const isReviewLike = await this.reviewLikeModel.findOne({
+      reviewId: reviewId,
+      userId: userId,
+    });
+
+    if (!isReviewLike) {
+      await this.reviewLikeModel.create({
+        reviewId: reviewId,
+        userId: userId,
+        isLike: false,
+      });
+      return false;
+    }
+
+    if (isReviewLike.isLike === false) {
+      await isReviewLike.deleteOne();
+      throw new NotFoundException(Err.REVIEW.NOT_FOUND);
+    }
+    if (isReviewLike.isLike === true) {
+      await isReviewLike.updateOne({ isLike: false });
+      return false;
+    }
+  }
+
+  async getReviewLike(reviewId: string, userId: string) {
+    const result = await this.reviewLikeModel.findOne({
+      reviewId: reviewId,
+      userId: userId,
+    });
+
+    if (!result) throw new NotFoundException(Err.REVIEW.NOT_FOUND);
     return result;
   }
 
