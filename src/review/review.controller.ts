@@ -7,15 +7,21 @@ import {
   Post,
   Put,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { ReviewService } from './review.service';
-import { ReviewCreateDTO, ReviewUpdateDTO } from './dto/request';
+import {
+  ReviewCreateDTO,
+  ReviewUpdateDTO,
+  SendLikeReviewDTO,
+} from './dto/request';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
 import {
   ApiSwaggerApiBody,
   ApiSwaggerApiParam,
 } from 'src/shared/decorators/swagger.decorator';
 import { GenreScoreService } from 'src/genre-score/genre-score.service';
+import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard';
 
 @Controller('review')
 @ApiTags('Review')
@@ -127,5 +133,29 @@ export class ReviewController {
   @Get('score/:userId')
   findUserScore(@Param('userId') userId: string) {
     return this.genreScoreService.findUserScore(userId);
+  }
+
+  @Post('send/like')
+  @UseGuards(JwtAuthGuard)
+  @ApiSwaggerApiBody(SendLikeReviewDTO)
+  likeReview(@Body() sendLikeReviewDTO: SendLikeReviewDTO) {
+    const { reviewId, userId } = sendLikeReviewDTO;
+    return this.reviewService.likeReview(reviewId, userId);
+  }
+  @Post('send/dislike')
+  @UseGuards(JwtAuthGuard)
+  dislikeReview(@Body() sendDislikeReviewDTO: SendLikeReviewDTO) {
+    const { reviewId, userId } = sendDislikeReviewDTO;
+    return this.reviewService.dislikeReview(reviewId, userId);
+  }
+
+  @Get('like/:reviewId/:userId')
+  @ApiSwaggerApiParam('reviewId', '65dd72c77e4cfc677cf30f1c')
+  @ApiSwaggerApiParam('userId', '6629e63db60f7e47ff09ccab')
+  getReviewLike(
+    @Param('reviewId') reviewId: string,
+    @Param('userId') userId: string,
+  ) {
+    return this.reviewService.getReviewLike(reviewId, userId);
   }
 }

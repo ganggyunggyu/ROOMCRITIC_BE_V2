@@ -1,3 +1,5 @@
+import { ApiProperty } from '@nestjs/swagger';
+
 export class ReviewCreateDTO {
   userId: string;
   userName: string;
@@ -36,4 +38,11 @@ export class FindTvReviewsDTO extends CursorDTO {
 }
 export class FindMovieReviewsDTO extends CursorDTO {
   contentType?: 'movie';
+}
+
+export class SendLikeReviewDTO {
+  @ApiProperty({ example: '6629e63db60f7e47ff09ccab' })
+  userId: string;
+  @ApiProperty({ example: '65dd72c77e4cfc677cf30f1c' })
+  reviewId: string;
 }

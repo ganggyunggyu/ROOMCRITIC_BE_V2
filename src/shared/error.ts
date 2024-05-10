@@ -9,6 +9,12 @@ export const Err = {
       message: '이미 존재하는 사용자입니다.',
     },
   },
+  REVIEW: {
+    NOT_FOUND: {
+      code: 404,
+      message: '리뷰에 대한 평가를 하지 않았습니다.',
+    },
+  },
   PRODUCT: {
     NOT_FOUND: {
       code: 404,
