@@ -32,30 +32,30 @@ export class ContentController {
     return { movies };
   }
 
-  @Get('search/:title')
-  async searchContentByTitle(@Query('title') title: string) {
+  @Get('search')
+  async searchContentByTitle(@Query('search_value') searchValue: string) {
     try {
-      return await this.contentService.findContentByTitle(title);
+      return await this.contentService.findContentByTitle(searchValue);
     } catch (error) {
       console.error('검색 오류:', error);
       throw new Error('Internal Server Error');
     }
   }
 
-  @Get('movie/search/:title')
-  async searchMovieByTitle(@Query('title') title: string): Promise<Movie[]> {
+  @Get('movie/search')
+  async searchMovieByTitle(@Query('search_value') searchValue: string) {
     try {
-      return await this.contentService.findMovieByTitle(title);
+      return await this.contentService.findMovieByTitle(searchValue);
     } catch (error) {
       console.error('영화 검색 오류:', error);
       throw new Error('Internal Server Error');
     }
   }
 
-  @Get('tv/search/:title')
-  async searchTvByTitle(@Param('title') title: string): Promise<Tv[]> {
+  @Get('tv/search')
+  async searchTvByTitle(@Query('search_value') searchValue: string) {
     try {
-      return await this.contentService.findTvByTitle(title);
+      return await this.contentService.findTvByTitle(searchValue);
     } catch (error) {
       console.error('TV 검색 오류:', error);
       throw new Error('Internal Server Error');
@@ -79,7 +79,7 @@ export class ContentController {
   }
 
   @Get('movie/latest')
-  async getMoviesByLatestReview(): Promise<Movie[]> {
+  async getMoviesByLatestReview() {
     try {
       return await this.contentService.findMovieByLatestReview();
     } catch (error) {
@@ -89,12 +89,16 @@ export class ContentController {
   }
 
   @Get('tv/latest')
-  async getTvsByLatestReview(): Promise<Tv[]> {
+  async getTvsByLatestReview() {
     try {
       return await this.contentService.findTvByLatestReview();
     } catch (error) {
       console.error('최근 리뷰 작성된 TV 검색 오류:', error);
       throw new Error('Internal Server Error');
     }
+  }
+  @Get('/movie/top-rated-movie')
+  async getTopRatedMovies() {
+    return this.contentService.getTopRatedMovies();
   }
 }

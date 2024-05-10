@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, PipelineStage } from 'mongoose';
 import { Movie } from 'src/movie/schema/movie.schema';
 import { Review } from 'src/review/schema/review.schema';
 import { Tv } from 'src/tv/schema/tv.schema';
@@ -22,7 +22,7 @@ export class ContentService {
             text: { query: title, path: 'title' },
           },
         },
-        { $limit: 20 },
+        { $limit: 10 },
       ]);
 
       const movies = await this.movieModel.aggregate([
@@ -60,7 +60,7 @@ export class ContentService {
     try {
       const movies = await this.movieModel.aggregate(movieGate);
 
-      return movies;
+      return { contents: movies };
     } catch (error) {
       console.error('검색 오류:', error);
 
@@ -80,7 +80,7 @@ export class ContentService {
     try {
       const tvs = await this.tvModel.aggregate(tvGate);
 
-      return tvs;
+      return { contents: tvs };
     } catch (error) {
       console.error('검색 오류:', error);
 
@@ -104,11 +104,11 @@ export class ContentService {
   async findMovieByLatestReview() {
     const contentIds = await this.reviewModel.distinct('contentId', {
       createTime: {
-        $gte: new Date(new Date().getTime() - 7 * 24 * 60 * 60 * 1000),
+        $gte: new Date(new Date().getTime() - 30 * 24 * 60 * 60 * 1000),
       }, // 최근 7일 이내 리뷰 작성된 것
     });
-    console.log(contentIds);
-    const movies: Movie[] = [];
+
+    const movies = [];
 
     for (const id of contentIds) {
       const movie = await this.movieModel.findOne({ _id: id });
@@ -116,16 +116,16 @@ export class ContentService {
         movies.push(movie);
       }
     }
-    return movies;
+    return { movies: movies };
   }
-  async findTvByLatestReview(): Promise<Tv[]> {
+  async findTvByLatestReview() {
     const contentIds = await this.reviewModel.distinct('contentId', {
       createTime: {
-        $gte: new Date(new Date().getTime() - 7 * 24 * 60 * 60 * 1000),
+        $gte: new Date(new Date().getTime() - 30 * 24 * 60 * 60 * 1000),
       }, // 최근 7일 이내 리뷰 작성된 것
     });
 
-    const tvs: Tv[] = [];
+    const tvs = [];
 
     for (const id of contentIds) {
       const tv = await this.tvModel.findOne({ _id: id });
@@ -133,7 +133,7 @@ export class ContentService {
         tvs.push(tv);
       }
     }
-    return tvs;
+    return { tvs: tvs };
   }
   async findMovieById(id: string) {
     console.log(id);
@@ -142,5 +142,20 @@ export class ContentService {
   async findTvById(id: string) {
     const tv = await this.tvModel.findOne({ _id: id }).exec();
     return tv;
+  }
+
+  async getTopRatedMovies() {
+    try {
+      const pipeline: PipelineStage[] = [
+        { $sort: { vote_count: -1 } },
+        { $limit: 100 },
+        { $sort: { vote_average: -1 } },
+        { $limit: 20 },
+      ];
+      const result = await this.movieModel.aggregate(pipeline);
+      return { movies: result };
+    } catch (error) {
+      console.error(error);
+    }
   }
 }
