@@ -21,7 +21,7 @@ export class JwtRefreshGuard extends AuthGuard('jwt-refresh-token') {
 
   async canActivate(context: ExecutionContext) {
     const request = context.switchToHttp().getRequest();
-    console.log('canActive Context', request.body);
+    // console.log('canActive Context', request.body);
     const requestRefreshToken = request.body.refreshToken;
 
     //Body 방식
