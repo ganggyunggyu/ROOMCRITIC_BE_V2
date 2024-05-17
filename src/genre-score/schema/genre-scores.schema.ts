@@ -1,30 +1,24 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Schema as MongooseSchema } from 'mongoose';
+import { Document, Schema as MongooseSchema, Types } from 'mongoose';
 
 export type GenreScoreDocument = GenreScore & Document;
 
 @Schema()
 export class GenreScore {
-  @Prop({ type: MongooseSchema.Types.ObjectId, required: true })
-  user_id: MongooseSchema.Types.ObjectId;
+  @Prop({ type: MongooseSchema.Types.ObjectId, required: true, ref: 'User' })
+  userId: Types.ObjectId;
 
   @Prop({ required: true })
-  review_count: number;
+  genreId: number;
 
-  @Prop([
-    {
-      genre_id: { type: Number, required: true },
-      genre_name: { type: String, required: true },
-      score: { type: Number, required: true },
-      count: { type: Number, required: true },
-    },
-  ])
-  genre_scores: {
-    genre_id: number;
-    genre_name: string;
-    score: number;
-    count: number;
-  }[];
+  @Prop({ required: true })
+  genreName: string;
+
+  @Prop({ required: true, default: 0 })
+  score: number;
+
+  @Prop({ required: true, default: 0 })
+  count: number;
 }
 
 export const GenreScoreSchema = SchemaFactory.createForClass(GenreScore);

@@ -7,7 +7,6 @@ import {
   GetTokenByIdDTO,
 } from './dto/user.dto';
 import { AuthService } from 'src/auth/auth.service';
-import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard';
 import { ApiTags } from '@nestjs/swagger';
 import { JwtRefreshGuard } from 'src/auth/guard/jwt-refresh.guard';
 import {
@@ -72,7 +71,7 @@ export class UserController {
   }
 
   @Get('/profile/id/:userId')
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   @ApiSwaggerApiParam('userId', '6629e63db60f7e47ff09ccab')
   async findUserInfoById(@Param('userId') userId: string) {
     const userInfo = await this.userService.findUserById(userId);
@@ -89,7 +88,8 @@ export class UserController {
   }
 
   @Get('/score/:userId')
-  async findGenreScore(@Param() userId: string) {
-    return this.userService.findGenreScoreByUserId(userId);
+  @ApiSwaggerApiParam('userId', '6629e63db60f7e47ff09ccab')
+  async findGenreScore(@Param('userId') userId: string) {
+    return this.genreScoreService.findUserScore(userId);
   }
 }
