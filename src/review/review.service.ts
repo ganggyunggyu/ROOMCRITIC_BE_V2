@@ -10,12 +10,25 @@ import {
 import { lessCursorQuery } from 'src/shared/paginate/cursor-paginate';
 import { ReviewLike } from './schema/review-like.schema';
 import { Err } from 'src/shared/error';
+import { GenreScore } from 'src/genre-score/schema/genre-scores.schema';
+import { Movie } from 'src/movie/schema/movie.schema';
+import { Tv } from 'src/tv/schema/tv.schema';
+import { GenreScoreService } from 'src/genre-score/genre-score.service';
+import { User } from 'src/user/schema/user.schema';
+import { ContentService } from 'src/content/content.service';
+import { getGenreName } from 'src/user/constant/GENRE_SCORES';
 
 @Injectable()
 export class ReviewService {
   constructor(
+    private readonly genreScoreService: GenreScoreService,
+    private readonly contentService: ContentService,
     @InjectModel('Review') private reviewModel: Model<Review>,
+    @InjectModel('Movie') private movieModel: Model<Movie>,
+    @InjectModel('Tv') private tvModel: Model<Tv>,
     @InjectModel('ReviewLike') private reviewLikeModel: Model<ReviewLike>,
+    @InjectModel('GenreScore') private genreScoreModel: Model<GenreScore>,
+    @InjectModel('User') private userModel: Model<User>,
   ) {}
 
   async findUserReviews(
@@ -178,14 +191,56 @@ export class ReviewService {
   }
 
   async addReview(reviewCreateDTO: ReviewCreateDTO) {
-    return reviewCreateDTO;
+    const newReview = await this.reviewModel.create(reviewCreateDTO);
+
+    const [userId, userReviewLength] = [
+      newReview.userId.toString(),
+      await this.getUserReviewLength(newReview.userId),
+    ];
+    await this.userModel.findByIdAndUpdate(userId, {
+      reviewCount: userReviewLength,
+    });
+    const { genre_ids: genreIds } =
+      await this.contentService.findContentGenreIds(
+        newReview.contentType,
+        newReview.contentId.toString(),
+      );
+
+    for (let i = 0; i < genreIds.length; i++) {
+      const genreId = genreIds[i];
+
+      await this.genreScoreModel.updateOne(
+        { userId: userId, genreId: genreId },
+        {
+          $inc: { score: newReview.grade, count: 1 },
+          $setOnInsert: { genreName: getGenreName(genreId) },
+        },
+        { upsert: true },
+      );
+    }
+
+    return newReview;
   }
 
+  async getUserReviewLength(userId) {
+    const userReviews = await this.reviewModel.find({ userId: userId });
+    return userReviews.length;
+  }
+
+  async getMovieIds() {}
+
+  async getTvIds() {}
+
   async removeReview(reviewId: string) {
-    return reviewId;
+    await this.reviewModel.findByIdAndDelete(reviewId);
+    return true;
   }
 
   async updateReview(reviewUpdateDTO: ReviewUpdateDTO) {
-    return reviewUpdateDTO;
+    await this.reviewModel.findByIdAndUpdate(
+      reviewUpdateDTO.reviewId,
+      reviewUpdateDTO,
+    );
+    return true;
   }
 }

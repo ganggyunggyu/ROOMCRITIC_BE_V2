@@ -114,19 +114,24 @@ export class ReviewController {
   }
 
   @Post('add')
+  @UseGuards(JwtAuthGuard)
   @ApiSwaggerApiBody(ReviewCreateDTO)
-  addReview(@Body() reviewCreateDTO: ReviewCreateDTO) {
-    return this.reviewService.addReview(reviewCreateDTO);
+  async addReview(@Body() reviewCreateDTO: ReviewCreateDTO) {
+    const newReview = await this.reviewService.addReview(reviewCreateDTO);
+    return newReview;
   }
 
   @Put('update')
+  @UseGuards(JwtAuthGuard)
   @ApiSwaggerApiBody(ReviewUpdateDTO)
   updateReview(@Body() reviewUpdateDTO: ReviewUpdateDTO) {
     return this.reviewService.updateReview(reviewUpdateDTO);
   }
 
   @Delete('remove/:reviewId')
+  @UseGuards(JwtAuthGuard)
   removeReview(@Param('reviewId') reviewId: string) {
+    console.log(reviewId);
     return this.reviewService.removeReview(reviewId);
   }
 
