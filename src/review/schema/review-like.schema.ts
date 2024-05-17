@@ -1,14 +1,14 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Types } from 'mongoose';
+import { Schema as MongooseSchema } from 'mongoose';
 
 export type ReviewLikeDocument = ReviewLike & Document;
 
 @Schema({ timestamps: true })
 export class ReviewLike {
-  @Prop({ type: Types.ObjectId, required: true })
+  @Prop({ type: MongooseSchema.Types.ObjectId, required: true, ref: 'Review' })
   reviewId: string;
 
-  @Prop({ type: Types.ObjectId, required: true })
+  @Prop({ type: MongooseSchema.Types.ObjectId, required: true, ref: 'User' })
   userId: string;
 
   @Prop({ type: Boolean })

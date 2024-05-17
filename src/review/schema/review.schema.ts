@@ -1,15 +1,15 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
+import { Document, Schema as MongooseSchema } from 'mongoose';
 
 export type ReviewDocument = Review & Document;
 
 @Schema({ timestamps: true })
 export class Review {
-  @Prop({ type: Types.ObjectId, required: true })
-  userId: string;
+  @Prop({ type: MongooseSchema.Types.ObjectId, required: true, ref: 'User' })
+  userId: MongooseSchema.Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, required: true })
-  contentId: string;
+  @Prop({ type: MongooseSchema.Types.ObjectId, required: true })
+  contentId: MongooseSchema.Types.ObjectId;
 
   @Prop({ type: String, required: true })
   userName: string;
@@ -37,9 +37,6 @@ export class Review {
 
   @Prop({ type: Number, default: 0 })
   like: number;
-
-  @Prop({ type: Date, default: Date.now })
-  createTime: Date;
 }
 
 export const ReviewSchema = SchemaFactory.createForClass(Review);

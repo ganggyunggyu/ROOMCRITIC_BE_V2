@@ -1,14 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Types } from 'mongoose';
 
 export class ReviewCreateDTO {
-  userId: string;
+  userId: Types.ObjectId;
   userName: string;
   lineRevieew: string;
   grade: number;
   contentPosterImg: string;
   contentBackdeopIng: string;
   contentName: string;
-  contentId: string;
+  contentId: Types.ObjectId;
   contentType: string;
 }
 
