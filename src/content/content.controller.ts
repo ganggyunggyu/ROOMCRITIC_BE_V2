@@ -3,7 +3,7 @@ import { ContentService } from './content.service';
 import { Tv } from 'src/tv/schema/tv.schema';
 import { movieIds, tvIds } from './constant/CONTENT_ID';
 import { Movie } from 'src/movie/schema/movie.schema';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiQuery, ApiTags } from '@nestjs/swagger';
 
 @Controller('content')
 @ApiTags('Content')
@@ -98,7 +98,17 @@ export class ContentController {
     }
   }
   @Get('/movie/top-rated-movie')
-  async getTopRatedMovies() {
-    return this.contentService.getTopRatedMovies();
+  @ApiQuery({
+    name: 'skip',
+    example: 0,
+    required: false,
+  })
+  @ApiQuery({
+    name: 'limit',
+    example: 10,
+    required: false,
+  })
+  async getTopRatedMovies(@Query('skip') skip: number) {
+    return this.contentService.getTopRatedMovies(+skip);
   }
 }

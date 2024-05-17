@@ -35,7 +35,9 @@ export class ContentService {
         { $limit: 10 },
       ]);
 
-      const contents = [...movies, ...tvs];
+      const contents = [...movies, ...tvs].sort((a, b) => {
+        return b.popularity - a.popularity;
+      });
 
       return {
         contents,
@@ -102,41 +104,32 @@ export class ContentService {
     }
   }
   async findMovieByLatestReview() {
-    const contentIds = await this.reviewModel.distinct('contentId', {
-      createTime: {
-        $gte: new Date(new Date().getTime() - 30 * 24 * 60 * 60 * 1000),
-      }, // 최근 7일 이내 리뷰 작성된 것
-    });
+    const ids = await this.reviewModel
+      .find()
+      .where('contentType')
+      .equals('movie')
+      .sort({ createdAt: -1 })
+      .limit(10);
 
-    const movies = [];
-
-    for (const id of contentIds) {
-      const movie = await this.movieModel.findOne({ _id: id });
-      if (movie) {
-        movies.push(movie);
-      }
-    }
-    return { movies: movies };
+    // const tvs = [];
+    // for (const id of ids) {
+    //   const tv = await this.findMovieById(id.contentId.toString());
+    //   tvs.push(tv);
+    // }
+    return { movies: ids };
   }
+
   async findTvByLatestReview() {
-    const contentIds = await this.reviewModel.distinct('contentId', {
-      createTime: {
-        $gte: new Date(new Date().getTime() - 30 * 24 * 60 * 60 * 1000),
-      }, // 최근 7일 이내 리뷰 작성된 것
-    });
+    const tvIds = await this.reviewModel
+      .find()
+      .where('contentType')
+      .equals('tv')
+      .sort({ createdAt: -1 })
+      .limit(10);
 
-    const tvs = [];
-
-    for (const id of contentIds) {
-      const tv = await this.tvModel.findOne({ _id: id });
-      if (tv) {
-        tvs.push(tv);
-      }
-    }
-    return { tvs: tvs };
+    return { tvs: tvIds };
   }
   async findMovieById(id: string) {
-    console.log(id);
     return await this.movieModel.findOne({ _id: id }).exec();
   }
   async findTvById(id: string) {
@@ -144,18 +137,31 @@ export class ContentService {
     return tv;
   }
 
-  async getTopRatedMovies() {
+  async getTopRatedMovies(skip: number, limit: number = 10) {
     try {
       const pipeline: PipelineStage[] = [
-        { $sort: { vote_count: -1 } },
-        { $limit: 100 },
-        { $sort: { vote_average: -1 } },
-        { $limit: 20 },
+        { $sort: { vote_count: -1, vote_average: -1 } },
+        { $skip: +skip },
+        { $limit: +limit },
       ];
       const result = await this.movieModel.aggregate(pipeline);
-      return { movies: result };
+
+      return result;
     } catch (error) {
       console.error(error);
+    }
+  }
+
+  async findContentGenreIds(contentType: string, contentId: string) {
+    if (contentType === 'tv') {
+      const genreIds = await this.tvModel.findById(contentId, { genre_ids: 1 });
+      return genreIds;
+    }
+    if (contentType === 'movie') {
+      const genreIds = await this.movieModel.findById(contentId, {
+        genre_ids: 1,
+      });
+      return genreIds;
     }
   }
 }
