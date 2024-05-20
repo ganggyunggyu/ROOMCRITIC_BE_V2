@@ -1,10 +1,19 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { UserService } from './user.service';
 import { LocalAuthGuard } from 'src/auth/guard/local-auth.guard';
 import {
   JoinRequestDTO,
   LoginRequestDTO,
   GetTokenByIdDTO,
+  GetRefreshTokenDTO,
 } from './dto/user.dto';
 import { AuthService } from 'src/auth/auth.service';
 import { ApiTags } from '@nestjs/swagger';
@@ -14,6 +23,7 @@ import {
   ApiSwaggerApiParam,
 } from 'src/shared/decorators/swagger.decorator';
 import { GenreScoreService } from 'src/genre-score/genre-score.service';
+import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard';
 
 @Controller('user')
 @ApiTags('User')
@@ -42,12 +52,12 @@ export class UserController {
   //Body로 refresh-token을 받아서 검증하여 access-token 재발급
   @Post('/auth/access-token')
   @UseGuards(JwtRefreshGuard)
-  @ApiSwaggerApiBody(GetTokenByIdDTO)
-  async getAccessToken(@Body() getAccessTokenDTO: GetTokenByIdDTO) {
-    const { userId } = getAccessTokenDTO;
-    const user = await this.userService.findUserById(userId);
-
-    const accessToken = await this.authService.createAccessToken(user);
+  @ApiSwaggerApiBody(GetRefreshTokenDTO)
+  async getAccessToken(
+    @Body() getAccessTokenDTO: GetRefreshTokenDTO,
+    @Req() req,
+  ) {
+    const accessToken = await this.authService.createAccessToken(req.user);
     return { accessToken };
   }
 
@@ -91,5 +101,11 @@ export class UserController {
   @ApiSwaggerApiParam('userId', '6629e63db60f7e47ff09ccab')
   async findGenreScore(@Param('userId') userId: string) {
     return this.genreScoreService.findUserScore(userId);
+  }
+
+  @Get('/login-check')
+  @UseGuards(JwtAuthGuard)
+  async fetchAuthStatus(@Req() req) {
+    return { ...req.user, isLoggedIn: true };
   }
 }
