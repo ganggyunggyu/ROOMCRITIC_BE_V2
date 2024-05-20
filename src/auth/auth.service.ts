@@ -27,6 +27,7 @@ export class AuthService {
       type: 'accessToken',
       email: user.email,
       displayName: user.displayName,
+      phoneNumber: user.phoneNumber,
       sub: user._id,
     };
     //JWT 표준과 일관성 유지를 위해 sub라는 속성 이름으로 userId를 보관
@@ -42,6 +43,7 @@ export class AuthService {
       type: 'refreshToken',
       email: user.email,
       displayName: user.displayName,
+      phoneNumber: user.phoneNumber,
       sub: user._id,
     };
     const token = this.jwtService.sign(payload, {
@@ -77,6 +79,7 @@ export class AuthService {
       type: 'refreshToken',
       email: user.email,
       displayName: user.displayName,
+      phoneNumber: user.phoneNumber,
       sub: user._id,
     };
     const token = this.jwtService.sign(payload, {
