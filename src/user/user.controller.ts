@@ -58,6 +58,7 @@ export class UserController {
     @Req() req,
   ) {
     const accessToken = await this.authService.createAccessToken(req.user);
+    // console.log(req);
     return { accessToken };
   }
 
@@ -67,12 +68,12 @@ export class UserController {
   @UseGuards(JwtRefreshGuard)
   @ApiSwaggerApiBody(GetTokenByIdDTO)
   async reissuanceRefreshToken(
-    @Body() reissuanceRefreshTokenDTO: GetTokenByIdDTO,
+    @Body() getAccessTokenDTO: GetRefreshTokenDTO,
+    @Req() req,
   ) {
-    const { userId } = reissuanceRefreshTokenDTO;
+    const refreshToken = await this.authService.reissueRefreshToken(req.user);
 
-    const user = await this.userService.findUserById(userId);
-    return await this.authService.reissueRefreshToken(user);
+    return { refresh_token: refreshToken };
   }
 
   @Post('/join')

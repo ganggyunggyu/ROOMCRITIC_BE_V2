@@ -6,7 +6,7 @@ import { ReviewSchema } from './schema/review.schema';
 import { GenreScoreSchema } from 'src/genre-score/schema/genre-scores.schema';
 import { UserSchema } from 'src/user/schema/user.schema';
 import { GenreScoreService } from 'src/genre-score/genre-score.service';
-import { ReviewLikeSchema } from './schema/review-like.schema';
+import { ReviewLikeSchema } from '../review-like/schema/review-like.schema';
 import { MovieSchema } from 'src/movie/schema/movie.schema';
 import { TvSchema } from 'src/tv/schema/tv.schema';
 import { ContentService } from 'src/content/content.service';
