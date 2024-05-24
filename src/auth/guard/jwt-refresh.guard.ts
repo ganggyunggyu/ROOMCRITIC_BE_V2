@@ -29,7 +29,7 @@ export class JwtRefreshGuard extends AuthGuard('jwt-refresh-token') {
       throw new BadRequestException(Err.TOKEN.NOT_SEND_REFRESH_TOKEN);
     }
     const refreshToken = requestRefreshToken.replace('Bearer ', '');
-
+    // console.log(refreshToken);
     //Header 방식
     // const { authorization } = request.headers;
     // if (authorization === undefined) {
@@ -37,9 +37,9 @@ export class JwtRefreshGuard extends AuthGuard('jwt-refresh-token') {
     // }
 
     // const refreshToken = authorization.replace('Bearer ', '');
+    // console.log(await this.validate(refreshToken));
 
     const refreshTokenValidate = await this.validate(refreshToken);
-
     request.user = refreshTokenValidate;
     return true;
   }
@@ -53,6 +53,7 @@ export class JwtRefreshGuard extends AuthGuard('jwt-refresh-token') {
       const tokenVerify = await this.authService.tokenValidate(token);
 
       const user = await this.userService.findUserById(tokenVerify.sub);
+      // console.log(user);
 
       if (user.refreshToken === refreshToken) {
         return user;
@@ -60,6 +61,7 @@ export class JwtRefreshGuard extends AuthGuard('jwt-refresh-token') {
         throw new Error('no permission');
       }
     } catch (error) {
+      // console.log(error);
       switch (error.message) {
         // 토큰에 대한 오류를 판단합니다.
         case 'invalid token':
