@@ -33,7 +33,7 @@ export class AuthService {
     //JWT 표준과 일관성 유지를 위해 sub라는 속성 이름으로 userId를 보관
     const accessToken = this.jwtService.sign(payload, {
       secret: process.env.JWT_SECRET,
-      expiresIn: '10s',
+      expiresIn: '15m',
     });
     return accessToken;
   }
@@ -49,6 +49,7 @@ export class AuthService {
     const token = this.jwtService.sign(payload, {
       secret: process.env.JWT_SECRET,
       expiresIn: '20700m',
+      // expiresIn: '30s',
     });
     const tokenVerify = await this.tokenValidate(token);
     const tokenExp = new Date(tokenVerify['exp'] * 1000);
@@ -84,8 +85,8 @@ export class AuthService {
     };
     const token = this.jwtService.sign(payload, {
       secret: process.env.JWT_SECRET,
-      // expiresIn: '20700m',
-      expiresIn: '10m',
+      expiresIn: '20700m',
+      // expiresIn: '30s',
     });
     const tokenVerify = await this.tokenValidate(token);
     const tokenExp = new Date(tokenVerify['exp'] * 1000);
