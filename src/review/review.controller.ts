@@ -131,7 +131,6 @@ export class ReviewController {
   @Delete('remove/:reviewId')
   @UseGuards(JwtAuthGuard)
   removeReview(@Param('reviewId') reviewId: string) {
-    console.log(reviewId);
     return this.reviewService.removeReview(reviewId);
   }
 
