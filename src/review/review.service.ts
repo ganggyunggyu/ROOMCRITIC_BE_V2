@@ -8,7 +8,7 @@ import {
   ReviewUpdateDTO,
 } from './dto/request';
 import { lessCursorQuery } from 'src/shared/paginate/cursor-paginate';
-import { ReviewLike } from './schema/review-like.schema';
+import { ReviewLike } from '../review-like/schema/review-like.schema';
 import { Err } from 'src/shared/error';
 import { GenreScore } from 'src/genre-score/schema/genre-scores.schema';
 import { Movie } from 'src/movie/schema/movie.schema';
@@ -16,7 +16,6 @@ import { Tv } from 'src/tv/schema/tv.schema';
 import { GenreScoreService } from 'src/genre-score/genre-score.service';
 import { User } from 'src/user/schema/user.schema';
 import { ContentService } from 'src/content/content.service';
-import { getGenreName } from 'src/user/constant/GENRE_SCORES';
 
 @Injectable()
 export class ReviewService {
@@ -121,11 +120,6 @@ export class ReviewService {
     return result;
   }
 
-  // 테이블이 없는 경우 -> 좋아요 실어요 모두 없음
-  // 테이블이 있는 경우
-  //isLike true
-  //isLike false
-
   async deleteDocument(_id) {
     await this.reviewLikeModel.findByIdAndDelete(_id);
   }
@@ -191,35 +185,32 @@ export class ReviewService {
   }
 
   async addReview(reviewCreateDTO: ReviewCreateDTO) {
-    const newReview = await this.reviewModel.create(reviewCreateDTO);
+    try {
+      const newReview = await this.reviewModel.create(reviewCreateDTO);
 
-    const [userId, userReviewLength] = [
-      newReview.userId.toString(),
-      await this.getUserReviewLength(newReview.userId),
-    ];
-    await this.userModel.findByIdAndUpdate(userId, {
-      reviewCount: userReviewLength,
-    });
-    const { genre_ids: genreIds } =
-      await this.contentService.findContentGenreIds(
-        newReview.contentType,
-        newReview.contentId.toString(),
-      );
+      const userId = newReview.userId.toString();
 
-    for (let i = 0; i < genreIds.length; i++) {
-      const genreId = genreIds[i];
+      await this.userModel.findByIdAndUpdate(userId, {
+        reviewCount: await this.reviewModel.countDocuments({
+          userId: userId,
+        }),
+      });
 
-      await this.genreScoreModel.updateOne(
-        { userId: userId, genreId: genreId },
-        {
-          $inc: { score: newReview.grade, count: 1 },
-          $setOnInsert: { genreName: getGenreName(genreId) },
-        },
-        { upsert: true },
-      );
+      const { genre_ids: genreIds } =
+        await this.contentService.findContentGenreIds(
+          newReview.contentType,
+          newReview.contentId.toString(),
+        );
+
+      const { grade } = newReview;
+
+      await this.genreScoreService.addGenreScore(genreIds, grade, userId);
+
+      return newReview;
+    } catch (error) {
+      console.error('Failed to add review:', error);
+      throw error;
     }
-
-    return newReview;
   }
 
   async getUserReviewLength(userId) {
@@ -232,11 +223,69 @@ export class ReviewService {
   async getTvIds() {}
 
   async removeReview(reviewId: string) {
-    await this.reviewModel.findByIdAndDelete(reviewId);
-    return true;
+    try {
+      const review = await this.findDetailReview(reviewId);
+      if (!review) {
+        throw new Error('Review not found');
+      }
+
+      const [userId, contentId] = [
+        review.userId.toString(),
+        review.contentId.toString(),
+      ];
+
+      const { genre_ids: genreIds } =
+        await this.contentService.findContentGenreIds(
+          review.contentType,
+          contentId,
+        );
+
+      const deleteResult = await this.reviewModel.findByIdAndDelete(reviewId);
+      if (!deleteResult) {
+        throw new Error('Failed to delete the review');
+      }
+
+      await this.userModel.findByIdAndUpdate(userId, {
+        reviewCount: await this.reviewModel.countDocuments({
+          userId: userId,
+        }),
+      });
+
+      await this.genreScoreService.subtractGenreScore(
+        genreIds,
+        review.grade,
+        userId,
+      );
+
+      return true;
+    } catch (error) {
+      console.error('Failed to remove review:', error);
+      throw error;
+    }
   }
 
   async updateReview(reviewUpdateDTO: ReviewUpdateDTO) {
+    const prevScore = await this.reviewModel
+      .findById(reviewUpdateDTO.reviewId)
+      .distinct('grade');
+
+    if (prevScore[0]) {
+      const score = reviewUpdateDTO.grade - prevScore[0];
+      const { genre_ids: genreIds } =
+        await this.contentService.findContentGenreIds(
+          (await this.findDetailReview(reviewUpdateDTO.reviewId)).contentType,
+          (
+            await this.findDetailReview(reviewUpdateDTO.reviewId)
+          ).contentId.toString(),
+        );
+
+      await this.genreScoreService.updateGenreScore(
+        genreIds,
+        score,
+        reviewUpdateDTO.userId,
+      );
+    }
+
     await this.reviewModel.findByIdAndUpdate(
       reviewUpdateDTO.reviewId,
       reviewUpdateDTO,
