@@ -4,137 +4,151 @@ import { Model, PipelineStage } from 'mongoose';
 import { Movie } from 'src/movie/schema/movie.schema';
 import { Review } from 'src/review/schema/review.schema';
 import { Tv } from 'src/tv/schema/tv.schema';
+import { Content } from './schema/content.schema';
+import { getGenreName } from 'src/user/constant/GENRE_SCORES';
+import { typeMatch } from './lib/typeMatch';
 
+export const searchContentProject = {
+  $project: {
+    _id: 1,
+    title: 1,
+    overview: 1,
+    originalTitle: 1,
+    genreIds: 1,
+    voteAverage: 1,
+    voteCount: 1,
+    backdropPath: 1,
+    posterPath: 1,
+    relaseDate: 1,
+    score: { $meta: 'searchScore' },
+  },
+};
 @Injectable()
 export class ContentService {
   constructor(
     @InjectModel('Tv') private readonly tvModel: Model<Tv>,
     @InjectModel('Movie') private readonly movieModel: Model<Movie>,
     @InjectModel('Review') private readonly reviewModel: Model<Review>,
+    @InjectModel('Content') private readonly contentModel: Model<Content>,
   ) {}
 
-  async findContentByTitle(title: string) {
+  async getContentByOneWithReview(contentId: string) {
+    const content = await this.contentModel.findById(contentId);
+    const reviews = await this.reviewModel.find({ contentId: contentId });
+    const result = { content, reviews };
+    console.log(result);
+    return result;
+  }
+
+  async getSearchContent(
+    searchValue: string,
+    contentType: 'tv' | 'movie' | 'all',
+  ): Promise<any[]> {
+    const match = typeMatch(contentType);
     try {
-      const tvs = await this.tvModel.aggregate([
+      console.log(`Searching for content with value: ${searchValue}`);
+      const result = await this.contentModel.aggregate([
         {
           $search: {
-            index: 'tvs_title_index',
-            text: { query: title, path: 'title' },
+            index: 'content_search_index',
+            compound: {
+              should: [
+                {
+                  text: {
+                    query: searchValue,
+                    path: 'title',
+                    // score: { boost: { value: 5 } },
+                  },
+                },
+                {
+                  text: {
+                    query: searchValue,
+                    path: 'originalTitle',
+                    // score: { boost: { value: 5 } },
+                  },
+                },
+                {
+                  text: {
+                    query: searchValue,
+                    path: 'overview',
+                    // score: { boost: { value: 3 } },
+                  },
+                },
+                {
+                  text: {
+                    query: searchValue,
+                    path: 'genreIds',
+                  },
+                },
+              ],
+              minimumShouldMatch: 1,
+            },
           },
         },
+        { $addFields: { score: { $meta: 'searchScore' } } },
+        { $sort: { score: -1, popularity: -1 } },
         { $limit: 10 },
+        match,
+        searchContentProject,
       ]);
 
-      const movies = await this.movieModel.aggregate([
-        {
-          $search: {
-            index: 'movies_title_index',
-            text: { query: title, path: 'title' },
-          },
-        },
-        { $limit: 10 },
-      ]);
-
-      const contents = [...movies, ...tvs].sort((a, b) => {
-        return b.popularity - a.popularity;
+      // 장르 ID를 장르 이름으로 변환
+      result.forEach((el) => {
+        el.genreIds = el.genreIds.map((v: string) => getGenreName(v));
       });
 
-      return {
-        contents,
-        message: '검색 콘텐츠 보내드림',
-      };
+      return result;
     } catch (error) {
-      console.error('검색 오류:', error);
-      throw new Error('Internal Server Error');
+      console.error('Search error:', error.message);
+      throw new Error('Failed to search content: ' + error.message);
     }
   }
 
-  async findMovieByTitle(title: string) {
-    const movieGate = [
-      {
-        $search: {
-          index: 'movies_title_index',
-          text: { query: title, path: 'title' },
-        },
-      },
-      { $limit: 20 },
-    ];
-    try {
-      const movies = await this.movieModel.aggregate(movieGate);
+  async getPopulaContent(
+    skip: number,
+    limit: number = 10,
+    contentType?: 'tv' | 'movie',
+  ) {
+    const pipeline: PipelineStage[] = contentType
+      ? [
+          { $match: { contentType: contentType } },
+          { $sort: { popularity: -1 } },
+          { $skip: +skip },
+          { $limit: +limit },
+          { $project: { __v: 0, voteCounte: 0, popularity: 0, adult: 0 } },
+        ]
+      : [
+          { $sort: { popularity: -1 } },
+          { $skip: +skip },
+          { $limit: +limit },
+          { $project: { __v: 0, voteCounte: 0, popularity: 0, adult: 0 } },
+        ];
 
-      return { contents: movies };
-    } catch (error) {
-      console.error('검색 오류:', error);
-
-      throw new Error(error);
-    }
-  }
-  async findTvByTitle(title: string) {
-    const tvGate = [
-      {
-        $search: {
-          index: 'tvs_title_index',
-          text: { query: title, path: 'title' },
-        },
-      },
-      { $limit: 20 },
-    ];
-    try {
-      const tvs = await this.tvModel.aggregate(tvGate);
-
-      return { contents: tvs };
-    } catch (error) {
-      console.error('검색 오류:', error);
-
-      throw new Error(error);
-    }
-  }
-  async findDetailContent(contentType, contentId) {
-    if (contentType === 'movie') {
-      const movie = await this.movieModel.findOne({ _id: contentId });
-      if (movie) {
-        return movie;
-      }
-    }
-    if (contentType === 'tv') {
-      const tv = await this.tvModel.findOne({ _id: contentId });
-      if (tv) {
-        return tv;
-      }
-    }
-  }
-  async findMovieByLatestReview() {
-    const ids = await this.reviewModel
-      .find()
-      .where('contentType')
-      .equals('movie')
-      .sort({ createdAt: -1 })
-      .limit(10);
-
-    // const tvs = [];
-    // for (const id of ids) {
-    //   const tv = await this.findMovieById(id.contentId.toString());
-    //   tvs.push(tv);
-    // }
-    return { movies: ids };
+    const result = await this.contentModel.aggregate(pipeline);
+    return result;
   }
 
-  async findTvByLatestReview() {
-    const tvIds = await this.reviewModel
-      .find()
-      .where('contentType')
-      .equals('tv')
-      .sort({ createdAt: -1 })
-      .limit(10);
-
-    return { tvs: tvIds };
-  }
-  async findMovieById(id: string) {
-    return await this.movieModel.findOne({ _id: id }).exec();
-  }
-  async findTvById(id: string) {
-    const tv = await this.tvModel.findOne({ _id: id }).exec();
-    return tv;
+  async getLatestContent(
+    skip: number,
+    limit: number = 10,
+    contentType: 'tv' | 'movie',
+  ) {
+    const pipeline: PipelineStage[] = contentType
+      ? [
+          { $match: { contentType: contentType } },
+          { $sort: { releaseDate: -1 } },
+          { $skip: +skip },
+          { $limit: +limit },
+          { $project: { __v: 0, voteCounte: 0, popularity: 0, adult: 0 } },
+        ]
+      : [
+          { $sort: { releaseDate: -1 } },
+          { $skip: +skip },
+          { $limit: +limit },
+          { $project: { __v: 0, voteCounte: 0, popularity: 0, adult: 0 } },
+        ];
+    const result = await this.contentModel.aggregate(pipeline);
+    return result;
   }
 
   async getTopRatedMovies(skip: number, limit: number = 10) {
@@ -152,16 +166,10 @@ export class ContentService {
     }
   }
 
-  async findContentGenreIds(contentType: string, contentId: string) {
-    if (contentType === 'tv') {
-      const genreIds = await this.tvModel.findById(contentId, { genre_ids: 1 });
-      return genreIds;
-    }
-    if (contentType === 'movie') {
-      const genreIds = await this.movieModel.findById(contentId, {
-        genre_ids: 1,
-      });
-      return genreIds;
-    }
+  async findContentGenreIds(contentId: string) {
+    const genreIds = await this.contentModel.findById(contentId, {
+      genreIds: 1,
+    });
+    return genreIds;
   }
 }

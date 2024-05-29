@@ -1,103 +1,46 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ContentService } from './content.service';
-import { Tv } from 'src/tv/schema/tv.schema';
-import { movieIds, tvIds } from './constant/CONTENT_ID';
-import { Movie } from 'src/movie/schema/movie.schema';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ContentWishService } from 'src/content-wish/content-wish.service';
+import { AddContentWishDTO } from 'src/content-wish/dto/AddContentWishDTO';
+import {
+  ApiSwaggerApiBody,
+  ApiSwaggerApiParam,
+} from 'src/shared/decorators/swagger.decorator';
 
 @Controller('content')
 @ApiTags('Content')
 export class ContentController {
-  constructor(private readonly contentService: ContentService) {}
+  constructor(
+    private readonly contentService: ContentService,
+    private contentWishService: ContentWishService,
+  ) {}
 
-  @Get('/tv/owner')
-  async findOwnerTv(): Promise<{ tvs: Tv[] }> {
-    const tvs: Tv[] = [];
-
-    for (const id of tvIds) {
-      const tv = await this.contentService.findTvById(id);
-
-      if (tv) tvs.push(tv);
-    }
-    return { tvs };
-  }
-
-  @Get('/movie/owner')
-  async findOwnerMovie(): Promise<{ movies: Movie[] }> {
-    const movies: Movie[] = [];
-    for (const id of movieIds) {
-      const movie = await this.contentService.findMovieById(id);
-      if (movie) movies.push(movie);
-    }
-    return { movies };
-  }
-
-  @Get('search')
-  async searchContentByTitle(@Query('search_value') searchValue: string) {
+  @Get('')
+  async searchContentByTitle(
+    @Query('q') searchValue: string,
+    @Query('content_type') contentType: 'tv' | 'movie' | 'all',
+  ) {
     try {
-      return await this.contentService.findContentByTitle(searchValue);
+      return await this.contentService.getSearchContent(
+        searchValue,
+        contentType,
+      );
     } catch (error) {
       console.error('검색 오류:', error);
       throw new Error('Internal Server Error');
     }
   }
 
-  @Get('movie/search')
-  async searchMovieByTitle(@Query('search_value') searchValue: string) {
-    try {
-      return await this.contentService.findMovieByTitle(searchValue);
-    } catch (error) {
-      console.error('영화 검색 오류:', error);
-      throw new Error('Internal Server Error');
-    }
-  }
-
-  @Get('tv/search')
-  async searchTvByTitle(@Query('search_value') searchValue: string) {
-    try {
-      return await this.contentService.findTvByTitle(searchValue);
-    } catch (error) {
-      console.error('TV 검색 오류:', error);
-      throw new Error('Internal Server Error');
-    }
-  }
-
-  @Get('detail/:contentType/:contentId')
-  async getContentDetail(
-    @Param('contentType') contentType: string,
-    @Param('contentId') contentId: string,
-  ) {
-    try {
-      return await this.contentService.findDetailContent(
-        contentType,
-        contentId,
-      );
-    } catch (error) {
-      console.error('상세 정보 검색 오류:', error);
-      throw new Error('Internal Server Error');
-    }
-  }
-
-  @Get('movie/latest')
-  async getMoviesByLatestReview() {
-    try {
-      return await this.contentService.findMovieByLatestReview();
-    } catch (error) {
-      console.error('최근 리뷰 작성된 영화 검색 오류:', error);
-      throw new Error('Internal Server Error');
-    }
-  }
-
-  @Get('tv/latest')
-  async getTvsByLatestReview() {
-    try {
-      return await this.contentService.findTvByLatestReview();
-    } catch (error) {
-      console.error('최근 리뷰 작성된 TV 검색 오류:', error);
-      throw new Error('Internal Server Error');
-    }
-  }
-  @Get('/movie/top-rated-movie')
+  @Get('/latest')
   @ApiQuery({
     name: 'skip',
     example: 0,
@@ -108,7 +51,107 @@ export class ContentController {
     example: 10,
     required: false,
   })
-  async getTopRatedMovies(@Query('skip') skip: number) {
-    return this.contentService.getTopRatedMovies(+skip);
+  @ApiQuery({
+    name: 'contentType',
+    example: 'movie',
+    required: false,
+  })
+  async getLatestContent(
+    @Query('skip') skip: number,
+    @Query('limit') limit: number,
+    @Query('contentType') contentType: 'tv' | 'movie',
+  ) {
+    try {
+      return await this.contentService.getLatestContent(
+        skip,
+        limit,
+        contentType,
+      );
+    } catch (error) {
+      console.error('최근 리뷰 작성된 TV 검색 오류:', error);
+      throw new Error('Internal Server Error');
+    }
+  }
+  @Get('/popular')
+  @ApiQuery({
+    name: 'skip',
+    example: 0,
+    required: false,
+  })
+  @ApiQuery({
+    name: 'limit',
+    example: 10,
+    required: false,
+  })
+  @ApiQuery({
+    name: 'contentType',
+    example: 'movie',
+    required: false,
+  })
+  async getPopulaContent(
+    @Query('skip') skip: number,
+    @Query('limit') limit: number,
+    @Query('content_type') contentType: 'tv' | 'movie',
+  ) {
+    console.log(skip, limit, contentType);
+    return this.contentService.getPopulaContent(+skip, limit, contentType);
+  }
+
+  @Get('wish/:userId/:contentId')
+  @ApiSwaggerApiParam('userId', '6629e63db60f7e47ff09ccab')
+  @ApiSwaggerApiParam('contentId', '65dbf74e13f52a0d8acd89a7')
+  async findWishContent(
+    @Param('userId') userId: string,
+    @Param('contentId') contentId: string,
+  ) {
+    const result = await this.contentWishService.findWishContent(
+      userId,
+      contentId,
+    );
+    console.log(result);
+    return result;
+  }
+
+  @Post('wish')
+  // @UseGuards(JwtAuthGuard)
+  @ApiSwaggerApiBody(AddContentWishDTO)
+  async addContentWish(@Body() addContentWishDTO: AddContentWishDTO) {
+    const { userId, contentId } = addContentWishDTO;
+
+    const result = await this.contentWishService.addContentWish(
+      userId.toString(),
+      contentId.toString(),
+    );
+    console.log(result);
+    return result;
+  }
+  @Delete('wish/:userId/:contentId')
+  // @UseGuards(JwtAuthGuard)
+  @ApiSwaggerApiParam('userId', '6629e63db60f7e47ff09ccab')
+  @ApiSwaggerApiParam('contentId', '65dbf74e13f52a0d8acd89a7')
+  async removeContentWish(
+    @Param('userId') userId: string,
+    @Param('contentId') contentId: string,
+  ) {
+    const result = await this.contentWishService.removeContentWish(
+      userId.toString(),
+      contentId.toString(),
+    );
+    console.log(result);
+    return result;
+  }
+  @Get('wish/:userId')
+  @ApiSwaggerApiParam('userId', '6629e63db60f7e47ff09ccab')
+  findWishContentByUser(@Param('userId') userId: string) {
+    return this.contentWishService.findWishContentByUser(userId);
+  }
+  @Get('/:contentId')
+  async getContentByOne(@Param('contentId') contentId: string) {
+    try {
+      return await this.contentService.getContentByOneWithReview(contentId);
+    } catch (error) {
+      console.error('상세 정보 검색 오류:', error);
+      throw new Error('Internal Server Error');
+    }
   }
 }
