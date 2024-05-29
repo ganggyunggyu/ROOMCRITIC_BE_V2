@@ -21,7 +21,7 @@ export class AuthService {
     return null;
   }
 
-  //JWT 생성
+  //accessToken 생성
   async createAccessToken(user: User) {
     const payload = {
       type: 'accessToken',
@@ -38,6 +38,7 @@ export class AuthService {
     return accessToken;
   }
 
+  //refreshToken 생성
   async createRefreshToken(user: User) {
     const payload = {
       type: 'refreshToken',
@@ -49,7 +50,7 @@ export class AuthService {
     const token = this.jwtService.sign(payload, {
       secret: process.env.JWT_SECRET,
       expiresIn: '20700m',
-      // expiresIn: '30s',
+      // expiresIn: '10m',
     });
     const tokenVerify = await this.tokenValidate(token);
     const tokenExp = new Date(tokenVerify['exp'] * 1000);
@@ -69,6 +70,8 @@ export class AuthService {
       secret: process.env.JWT_SECRET,
     });
   }
+
+  //refreshToken 재발급
   async reissueRefreshToken(user: User) {
     const existingUser = await this.userModel.findOne({ _id: user._id });
 
@@ -95,6 +98,7 @@ export class AuthService {
       (tokenExp.getTime() - current_time.getTime()) / 1000 / 60 / 60,
     );
 
+    console.log(time_remaining);
     //토큰의 유효 기간이 7일 이상인 경우 재발급 불가능
     if (time_remaining > 10) {
       throw new BadRequestException(Err.TOKEN.JWT_NOT_REISSUED);
