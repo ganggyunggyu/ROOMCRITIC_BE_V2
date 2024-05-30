@@ -12,7 +12,6 @@ import { LocalAuthGuard } from 'src/auth/guard/local-auth.guard';
 import {
   JoinRequestDTO,
   LoginRequestDTO,
-  GetTokenByIdDTO,
   GetRefreshTokenDTO,
 } from './dto/user.dto';
 import { AuthService } from 'src/auth/auth.service';
@@ -46,8 +45,9 @@ export class UserController {
   }
 
   @Post('auth/logout')
-  async logout(@Body('userId') userId: string) {
-    return this.authService.logout(userId);
+  @UseGuards(JwtRefreshGuard)
+  async logout(@Req() req) {
+    return this.authService.logout(req.user._id);
   }
   //Body로 refresh-token을 받아서 검증하여 access-token 재발급
   @Post('/auth/access-token')
@@ -66,7 +66,7 @@ export class UserController {
   //유효기간이 7일 이내라면 재발급
   @Post('auth/refresh-token')
   @UseGuards(JwtRefreshGuard)
-  @ApiSwaggerApiBody(GetTokenByIdDTO)
+  @ApiSwaggerApiBody(GetRefreshTokenDTO)
   async reissuanceRefreshToken(
     @Body() getAccessTokenDTO: GetRefreshTokenDTO,
     @Req() req,
