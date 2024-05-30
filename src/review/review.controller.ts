@@ -52,26 +52,27 @@ export class ReviewController {
     return this.reviewService.findLatestReviews(limit, cursor);
   }
 
+  @Get('/temp/:contentId')
+  @ApiSwaggerApiParam('contentId', '66568c7287e12c9e1f655e07')
+  getReviewByContentTemp(@Param('contentId') contentId: string) {
+    console.log(contentId);
+    return this.reviewService.getReviewByContentTemp(8, contentId);
+  }
+
   @Get('detail/:reviewId')
   findDetailReview(@Param('reviewId') reviewId: string) {
     return this.reviewService.findDetailReview(reviewId);
   }
 
-  @Get('content/:contentType/:contentId')
+  @Get('/:contentId')
   @ApiQuery({ name: 'limit', required: false })
-  @ApiQuery({ name: 'cursor', required: false })
-  findContentReviews(
-    @Param('contentType') contentType: string,
+  @ApiQuery({ name: 'skip', required: false })
+  getReviewByContent(
     @Param('contentId') contentId: string,
     @Query('limit') limit: number,
-    @Query('cursor') cursor?: string,
+    @Query('skip') skip?: number,
   ) {
-    return this.reviewService.findContentReviews(
-      limit,
-      cursor,
-      contentType,
-      contentId,
-    );
+    return this.reviewService.getReviewByContent(limit, skip, contentId);
   }
 
   @Get('tv')
@@ -139,23 +140,24 @@ export class ReviewController {
     return this.genreScoreService.findUserScore(userId);
   }
 
-  @Post('send/like')
+  @Post('like')
   @UseGuards(JwtAuthGuard)
   @ApiSwaggerApiBody(SendLikeReviewDTO)
   likeReview(@Body() sendLikeReviewDTO: SendLikeReviewDTO) {
     const { reviewId, userId } = sendLikeReviewDTO;
     return this.reviewService.likeReview(reviewId, userId);
   }
-  @Post('send/dislike')
+  @Post('dislike')
   @UseGuards(JwtAuthGuard)
+  @ApiSwaggerApiBody(SendLikeReviewDTO)
   dislikeReview(@Body() sendDislikeReviewDTO: SendLikeReviewDTO) {
     const { reviewId, userId } = sendDislikeReviewDTO;
     return this.reviewService.dislikeReview(reviewId, userId);
   }
 
-  @Get('like/:reviewId/:userId')
-  @ApiSwaggerApiParam('reviewId', '65dd72c77e4cfc677cf30f1c')
+  @Get('like/:userId/:reviewId')
   @ApiSwaggerApiParam('userId', '6629e63db60f7e47ff09ccab')
+  @ApiSwaggerApiParam('reviewId', '65dd72c77e4cfc677cf30f1c')
   getReviewLike(
     @Param('reviewId') reviewId: string,
     @Param('userId') userId: string,

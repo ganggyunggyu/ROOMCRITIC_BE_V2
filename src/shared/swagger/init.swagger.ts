@@ -1,7 +1,7 @@
 import { DocumentBuilder } from '@nestjs/swagger';
 
 export const swaggerConfig = new DocumentBuilder()
-  .setTitle('RoomCritic Beck End')
+  .setTitle('RoomCritic BeckEnd')
   .setDescription('룸크리틱 백엔드 API 명세')
   .setVersion('2.0')
   .addBearerAuth(

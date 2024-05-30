@@ -8,7 +8,7 @@ export class Review {
   @Prop({ type: MongooseSchema.Types.ObjectId, required: true, ref: 'User' })
   userId: MongooseSchema.Types.ObjectId;
 
-  @Prop({ type: MongooseSchema.Types.ObjectId, required: true })
+  @Prop({ type: MongooseSchema.Types.ObjectId, required: true, ref: 'Content' })
   contentId: MongooseSchema.Types.ObjectId;
 
   @Prop({ type: String, required: true })
