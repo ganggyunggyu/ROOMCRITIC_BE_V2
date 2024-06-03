@@ -19,7 +19,7 @@ export const searchContentProject = {
     voteCount: 1,
     backdropPath: 1,
     posterPath: 1,
-    relaseDate: 1,
+    releaseDate: 1,
     score: { $meta: 'searchScore' },
   },
 };

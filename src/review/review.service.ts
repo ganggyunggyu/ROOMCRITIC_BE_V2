@@ -30,19 +30,21 @@ export class ReviewService {
     @InjectModel('User') private userModel: Model<User>,
   ) {}
 
-  async findUserReviews(
+  async getReviewByUser(
     userId: string,
-    limit: number = 10,
-    cursor: string = null,
+    limit: number = 9,
+    skip: number = null,
   ) {
-    const query = cursor ? { _id: { $lt: cursor } } : {};
     const objectIdByUserId = new Types.ObjectId(userId);
 
     const result = await this.reviewModel
-      .find({ userId: objectIdByUserId, ...query })
+      .find({ userId: objectIdByUserId })
       .limit(limit)
+      .skip(skip)
       .sort({ _id: -1 })
       .exec();
+    console.log(result);
+    if (result.length === 0) return false;
     return result;
   }
 
@@ -56,24 +58,35 @@ export class ReviewService {
     return result;
   }
 
-  async findDetailReview(reviewId: string) {
+  async getReviewById(reviewId: string) {
     const result = await this.reviewModel.findById(reviewId);
     return result;
   }
 
-  async findContentReviews(
+  async getReviewByContent(
     limit: number = 10,
-    cursor: string = null,
-    contentType: string,
+    skip: number,
     contentId: string,
   ) {
-    const query = lessCursorQuery(cursor);
+    const objectIdByContentId = new Types.ObjectId(contentId);
+
+    const result = await this.reviewModel
+      .find({
+        contentId: objectIdByContentId,
+      })
+      .limit(limit)
+      .skip(skip)
+      .sort({ _id: -1 })
+      .exec();
+
+    if (result.length === 0) return false;
+    return result;
+  }
+  async getReviewByContentTemp(limit: number = 8, contentId: string) {
     const objectIdByContentId = new Types.ObjectId(contentId);
     const result = await this.reviewModel
       .find({
-        contentType: contentType,
         contentId: objectIdByContentId,
-        ...query,
       })
       .limit(limit)
       .sort({ _id: -1 })
@@ -196,11 +209,9 @@ export class ReviewService {
         }),
       });
 
-      const { genre_ids: genreIds } =
-        await this.contentService.findContentGenreIds(
-          newReview.contentType,
-          newReview.contentId.toString(),
-        );
+      const { genreIds } = await this.contentService.findContentGenreIds(
+        newReview.contentId.toString(),
+      );
 
       const { grade } = newReview;
 
@@ -224,7 +235,7 @@ export class ReviewService {
 
   async removeReview(reviewId: string) {
     try {
-      const review = await this.findDetailReview(reviewId);
+      const review = await this.getReviewById(reviewId);
       if (!review) {
         throw new Error('Review not found');
       }
@@ -234,11 +245,9 @@ export class ReviewService {
         review.contentId.toString(),
       ];
 
-      const { genre_ids: genreIds } =
-        await this.contentService.findContentGenreIds(
-          review.contentType,
-          contentId,
-        );
+      const { genreIds } = await this.contentService.findContentGenreIds(
+        review.contentType,
+      );
 
       const deleteResult = await this.reviewModel.findByIdAndDelete(reviewId);
       if (!deleteResult) {
@@ -271,13 +280,11 @@ export class ReviewService {
 
     if (prevScore[0]) {
       const score = reviewUpdateDTO.grade - prevScore[0];
-      const { genre_ids: genreIds } =
-        await this.contentService.findContentGenreIds(
-          (await this.findDetailReview(reviewUpdateDTO.reviewId)).contentType,
-          (
-            await this.findDetailReview(reviewUpdateDTO.reviewId)
-          ).contentId.toString(),
-        );
+      const { genreIds } = await this.contentService.findContentGenreIds(
+        (
+          await this.getReviewById(reviewUpdateDTO.reviewId)
+        ).contentId.toString(),
+      );
 
       await this.genreScoreService.updateGenreScore(
         genreIds,

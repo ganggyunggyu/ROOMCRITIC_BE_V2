@@ -34,12 +34,12 @@ export class ReviewController {
   @Get('user/:userId')
   @ApiQuery({ name: 'limit', required: false })
   @ApiQuery({ name: 'cursor', required: false })
-  async findUserReviews(
+  async getReviewByUser(
     @Param('userId') userId: string,
     @Query('limit') limit: number,
-    @Query('cursor') cursor?: string,
+    @Query('skip') skip?: number,
   ) {
-    return this.reviewService.findUserReviews(userId, limit, cursor);
+    return this.reviewService.getReviewByUser(userId, limit, skip);
   }
 
   @Get('latest')
@@ -60,19 +60,20 @@ export class ReviewController {
   }
 
   @Get('detail/:reviewId')
-  findDetailReview(@Param('reviewId') reviewId: string) {
-    return this.reviewService.findDetailReview(reviewId);
+  getReviewById(@Param('reviewId') reviewId: string) {
+    return this.reviewService.getReviewById(reviewId);
   }
 
   @Get('/:contentId')
+  @ApiSwaggerApiParam('contentId', '66568c7287e12c9e1f655e07')
   @ApiQuery({ name: 'limit', required: false })
   @ApiQuery({ name: 'skip', required: false })
-  getReviewByContent(
+  async getReviewByContent(
     @Param('contentId') contentId: string,
     @Query('limit') limit: number,
     @Query('skip') skip?: number,
   ) {
-    return this.reviewService.getReviewByContent(limit, skip, contentId);
+    return await this.reviewService.getReviewByContent(limit, skip, contentId);
   }
 
   @Get('tv')
