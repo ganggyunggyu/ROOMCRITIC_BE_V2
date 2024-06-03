@@ -10,6 +10,7 @@ import { ReviewLikeSchema } from '../review-like/schema/review-like.schema';
 import { MovieSchema } from 'src/movie/schema/movie.schema';
 import { TvSchema } from 'src/tv/schema/tv.schema';
 import { ContentService } from 'src/content/content.service';
+import { ContentSchema } from 'src/content/schema/content.schema';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { ContentService } from 'src/content/content.service';
       { name: 'User', schema: UserSchema },
       { name: 'Movie', schema: MovieSchema },
       { name: 'Tv', schema: TvSchema },
+      { name: 'Content', schema: ContentSchema },
     ]),
   ],
   controllers: [ReviewController],
