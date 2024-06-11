@@ -165,4 +165,10 @@ export class ReviewController {
   ) {
     return this.reviewService.getReviewLike(reviewId, userId);
   }
+
+  @Get('/average/:contentId')
+  @ApiSwaggerApiParam('contentId', '66568c7287e12c9e1f655e07')
+  getAverageGrade(@Param('contentId') contentId) {
+    return this.reviewService.getAverageGrade(contentId);
+  }
 }

@@ -30,6 +30,14 @@ export class ReviewService {
     @InjectModel('User') private userModel: Model<User>,
   ) {}
 
+  async getUserReviewLength(userId) {
+    const userReviews = await this.reviewModel.find({ userId: userId });
+    return userReviews.length;
+  }
+  async getContentReviewLength(contentId) {
+    return (await this.reviewModel.find({ contentId: contentId })).length;
+  }
+
   async getReviewByUser(
     userId: string,
     limit: number = 9,
@@ -224,15 +232,6 @@ export class ReviewService {
     }
   }
 
-  async getUserReviewLength(userId) {
-    const userReviews = await this.reviewModel.find({ userId: userId });
-    return userReviews.length;
-  }
-
-  async getMovieIds() {}
-
-  async getTvIds() {}
-
   async removeReview(reviewId: string) {
     try {
       const review = await this.getReviewById(reviewId);
@@ -245,9 +244,8 @@ export class ReviewService {
         review.contentId.toString(),
       ];
 
-      const { genreIds } = await this.contentService.findContentGenreIds(
-        review.contentType,
-      );
+      const { genreIds } =
+        await this.contentService.findContentGenreIds(contentId);
 
       const deleteResult = await this.reviewModel.findByIdAndDelete(reviewId);
       if (!deleteResult) {
@@ -298,5 +296,19 @@ export class ReviewService {
       reviewUpdateDTO,
     );
     return true;
+  }
+
+  async getAverageGrade(contentId) {
+    const reviews = await this.reviewModel.find({ contentId: contentId });
+
+    const length = reviews.length;
+    const totalGrade = reviews.reduce((sum, review) => sum + review.grade, 0);
+    const averageGrade = length ? totalGrade / length : 0;
+
+    return {
+      totalGrade,
+      length,
+      averageGrade: averageGrade.toFixed(2),
+    };
   }
 }
