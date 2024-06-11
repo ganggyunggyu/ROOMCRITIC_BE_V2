@@ -13,6 +13,7 @@ import { ReviewModule } from './review/review.module';
 import { GenreScoreModule } from './genre-score/genre-score.module';
 import { ReviewLikeModule } from './review-like/review-like.module';
 import { ContentWishModule } from './content-wish/content-wish.module';
+import { ContentWatchModule } from './content-watch/content-watch.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { ContentWishModule } from './content-wish/content-wish.module';
     GenreScoreModule,
     ReviewLikeModule,
     ContentWishModule,
+    ContentWatchModule,
   ],
   controllers: [AppController],
   providers: [AppService],
