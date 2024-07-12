@@ -57,21 +57,18 @@ export class ContentService {
                   text: {
                     query: searchValue,
                     path: 'title',
-                    // score: { boost: { value: 5 } },
                   },
                 },
                 {
                   text: {
                     query: searchValue,
                     path: 'originalTitle',
-                    // score: { boost: { value: 5 } },
                   },
                 },
                 {
                   text: {
                     query: searchValue,
                     path: 'overview',
-                    // score: { boost: { value: 3 } },
                   },
                 },
                 {
@@ -92,7 +89,6 @@ export class ContentService {
         searchContentProject,
       ]);
 
-      // 장르 ID를 장르 이름으로 변환
       result.forEach((el) => {
         el.genreIds = el.genreIds.map((v: string) => getGenreName(v));
       });
@@ -112,16 +108,16 @@ export class ContentService {
     const pipeline: PipelineStage[] = contentType
       ? [
           { $match: { contentType: contentType } },
-          { $sort: { popularity: -1 } },
+          { $sort: { voteCount: -1, voteAverage: -1 } },
           { $skip: +skip },
           { $limit: +limit },
-          { $project: { __v: 0, voteCounte: 0, popularity: 0, adult: 0 } },
+          { $project: { __v: 0, voteCount: 0, popularity: 0, adult: 0 } },
         ]
       : [
-          { $sort: { popularity: -1 } },
+          { $sort: { voteCount: -1, voteAverage: -1 } },
           { $skip: +skip },
           { $limit: +limit },
-          { $project: { __v: 0, voteCounte: 0, popularity: 0, adult: 0 } },
+          { $project: { __v: 0, voteCount: 0, popularity: 0, adult: 0 } },
         ];
 
     const result = await this.contentModel.aggregate(pipeline);
@@ -133,20 +129,17 @@ export class ContentService {
     limit: number = 10,
     contentType: 'tv' | 'movie',
   ) {
-    const pipeline: PipelineStage[] = contentType
-      ? [
-          { $match: { contentType: contentType } },
-          { $sort: { releaseDate: -1 } },
-          { $skip: +skip },
-          { $limit: +limit },
-          { $project: { __v: 0, voteCounte: 0, popularity: 0, adult: 0 } },
-        ]
-      : [
-          { $sort: { releaseDate: -1 } },
-          { $skip: +skip },
-          { $limit: +limit },
-          { $project: { __v: 0, voteCounte: 0, popularity: 0, adult: 0 } },
-        ];
+    const pipeline: PipelineStage[] = [
+      {
+        $match: {
+          ...(contentType && { contentType }),
+        },
+      },
+      { $sort: { releaseDate: -1 } },
+      { $skip: +skip },
+      { $limit: +limit },
+      { $project: { __v: 0, voteCounte: 0, popularity: 0, adult: 0 } },
+    ];
     const result = await this.contentModel.aggregate(pipeline);
     return result;
   }
