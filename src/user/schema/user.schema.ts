@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import mongoose, { Document } from 'mongoose';
 
 @Schema({ timestamps: true })
 export class User extends Document {
@@ -23,6 +23,27 @@ export class User extends Document {
 
   @Prop({ type: Number, default: 0 })
   reviewCount: number;
+
+  @Prop({
+    type: [{ type: mongoose.Types.ObjectId, ref: 'Content' }],
+    default: [],
+  })
+  favoriteContentList: mongoose.Types.ObjectId[];
+
+  @Prop({
+    type: [{ type: mongoose.Types.ObjectId, ref: 'Review' }],
+    default: [],
+  })
+  favoriteReviewList: mongoose.Types.ObjectId[];
+
+  @Prop({
+    type: [{ type: mongoose.Types.ObjectId, ref: 'Content' }],
+    default: [],
+  })
+  viewedContentList: mongoose.Types.ObjectId[];
+
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

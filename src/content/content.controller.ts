@@ -9,8 +9,6 @@ import {
 } from '@nestjs/common';
 import { ContentService } from './content.service';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
-import { ContentWishService } from 'src/content-wish/content-wish.service';
-import { AddContentWishDTO } from 'src/content-wish/dto/AddContentWishDTO';
 import {
   ApiSwaggerApiBody,
   ApiSwaggerApiParam,
@@ -19,10 +17,7 @@ import {
 @Controller('content')
 @ApiTags('Content')
 export class ContentController {
-  constructor(
-    private readonly contentService: ContentService,
-    private contentWishService: ContentWishService,
-  ) {}
+  constructor(private readonly contentService: ContentService) {}
 
   @Get('')
   async searchContentByTitle(
@@ -93,7 +88,6 @@ export class ContentController {
     @Query('limit') limit: number,
     @Query('content_type') contentType: 'tv' | 'movie',
   ) {
-    console.log(skip, limit, contentType);
     return this.contentService.getPopulaContent(+skip, limit, contentType);
   }
 
@@ -103,27 +97,12 @@ export class ContentController {
   async findWishContent(
     @Param('userId') userId: string,
     @Param('contentId') contentId: string,
-  ) {
-    const result = await this.contentWishService.findWishContent(
-      userId,
-      contentId,
-    );
-    console.log(result);
-    return result;
-  }
+  ) {}
 
   @Post('wish')
   // @UseGuards(JwtAuthGuard)
-  @ApiSwaggerApiBody(AddContentWishDTO)
-  async addContentWish(@Body() addContentWishDTO: AddContentWishDTO) {
+  async addContentWish(@Body() addContentWishDTO) {
     const { userId, contentId } = addContentWishDTO;
-
-    const result = await this.contentWishService.addContentWish(
-      userId.toString(),
-      contentId.toString(),
-    );
-    console.log(result);
-    return result;
   }
   @Delete('wish/:userId/:contentId')
   // @UseGuards(JwtAuthGuard)
@@ -132,19 +111,10 @@ export class ContentController {
   async removeContentWish(
     @Param('userId') userId: string,
     @Param('contentId') contentId: string,
-  ) {
-    const result = await this.contentWishService.removeContentWish(
-      userId.toString(),
-      contentId.toString(),
-    );
-    console.log(result);
-    return result;
-  }
+  ) {}
   @Get('wish/:userId')
   @ApiSwaggerApiParam('userId', '6629e63db60f7e47ff09ccab')
-  findWishContentByUser(@Param('userId') userId: string) {
-    return this.contentWishService.findWishContentByUser(userId);
-  }
+  findWishContentByUser(@Param('userId') userId: string) {}
   @Get('/:contentId')
   async getContentByOne(@Param('contentId') contentId: string) {
     try {

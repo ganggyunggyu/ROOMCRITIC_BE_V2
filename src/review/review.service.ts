@@ -1,15 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Review } from './schema/review.schema';
-import { Model, Types } from 'mongoose';
+import mongoose, { Model, Types } from 'mongoose';
 import {
   FindMovieReviewsDTO,
   ReviewCreateDTO,
   ReviewUpdateDTO,
 } from './dto/request';
 import { lessCursorQuery } from 'src/shared/paginate/cursor-paginate';
-import { ReviewLike } from '../review-like/schema/review-like.schema';
-import { Err } from 'src/shared/error';
+import { ERROR } from 'src/shared/error';
 import { GenreScore } from 'src/genre-score/schema/genre-scores.schema';
 import { Movie } from 'src/movie/schema/movie.schema';
 import { Tv } from 'src/tv/schema/tv.schema';
@@ -25,7 +24,6 @@ export class ReviewService {
     @InjectModel('Review') private reviewModel: Model<Review>,
     @InjectModel('Movie') private movieModel: Model<Movie>,
     @InjectModel('Tv') private tvModel: Model<Tv>,
-    @InjectModel('ReviewLike') private reviewLikeModel: Model<ReviewLike>,
     @InjectModel('GenreScore') private genreScoreModel: Model<GenreScore>,
     @InjectModel('User') private userModel: Model<User>,
   ) {}
@@ -51,7 +49,6 @@ export class ReviewService {
       .skip(skip)
       .sort({ _id: -1 })
       .exec();
-    console.log(result);
     if (result.length === 0) return false;
     return result;
   }
@@ -141,68 +138,61 @@ export class ReviewService {
     return result;
   }
 
-  async deleteDocument(_id) {
-    await this.reviewLikeModel.findByIdAndDelete(_id);
-  }
-
   async likeReview(reviewId: string, userId: string) {
-    const isReviewLike = await this.reviewLikeModel.findOne({
-      reviewId: reviewId,
-      userId: userId,
-    });
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+    const reviewObjectId = new mongoose.Types.ObjectId(reviewId);
+    const [user, review] = [
+      await this.userModel.findById(userObjectId),
+      await this.reviewModel.findById(reviewObjectId),
+    ];
 
-    if (!isReviewLike) {
-      await this.reviewLikeModel.create({
-        reviewId: reviewId,
-        userId: userId,
-        isLike: true,
-      });
-      return true;
-    }
+    const isAleayLiked = user.favoriteReviewList?.includes(reviewObjectId);
 
-    if (isReviewLike.isLike === true) {
-      await isReviewLike.deleteOne();
-      throw new NotFoundException(Err.REVIEW.NOT_FOUND);
-    }
-    if (isReviewLike.isLike === false) {
-      await isReviewLike.updateOne({ isLike: true });
-      return true;
-    }
-  }
-
-  async dislikeReview(reviewId: string, userId: string) {
-    const isReviewLike = await this.reviewLikeModel.findOne({
-      reviewId: reviewId,
-      userId: userId,
-    });
-
-    if (!isReviewLike) {
-      await this.reviewLikeModel.create({
-        reviewId: reviewId,
-        userId: userId,
-        isLike: false,
-      });
-      return false;
-    }
-
-    if (isReviewLike.isLike === false) {
-      await isReviewLike.deleteOne();
-      throw new NotFoundException(Err.REVIEW.NOT_FOUND);
-    }
-    if (isReviewLike.isLike === true) {
-      await isReviewLike.updateOne({ isLike: false });
-      return false;
+    try {
+      if (!isAleayLiked) {
+        user.favoriteReviewList.push(reviewObjectId);
+        review.like++;
+        await user.save();
+        await review.save();
+        return {
+          status: 200,
+          isSuccess: true,
+        };
+      }
+      if (isAleayLiked) {
+        user.favoriteReviewList = user.favoriteReviewList.filter(
+          (id) => !id.equals(reviewObjectId),
+        );
+        review.like--;
+        await user.save();
+        await review.save();
+        return {
+          status: 200,
+          isSuccess: true,
+        };
+      }
+    } catch (error) {
+      console.error(error);
+      return {
+        error: error,
+        isSuccess: false,
+      };
     }
   }
 
   async getReviewLike(reviewId: string, userId: string) {
-    const result = await this.reviewLikeModel.findOne({
-      reviewId: reviewId,
-      userId: userId,
-    });
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+    const reviewObjectId = new mongoose.Types.ObjectId(reviewId);
+    const user = await this.userModel.findById(userObjectId);
 
-    if (!result) throw new NotFoundException(Err.REVIEW.NOT_FOUND);
-    return result;
+    try {
+      const isAleayLiked = user.favoriteReviewList?.includes(reviewObjectId);
+
+      return isAleayLiked;
+    } catch (error) {
+      console.log(error);
+      return false;
+    }
   }
 
   async addReview(reviewCreateDTO: ReviewCreateDTO) {

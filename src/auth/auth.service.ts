@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { UserService } from 'src/user/user.service';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Err } from 'src/shared/error';
+import { ERROR } from 'src/shared/error';
 import { JwtService } from '@nestjs/jwt';
 import * as CryptoJS from 'crypto-js';
 import { User } from 'src/user/schema/user.schema';
@@ -77,7 +77,7 @@ export class AuthService {
 
     //토큰 식별자가 다른 경우
     if (!existingUser) {
-      throw new BadRequestException(Err.USER.NOT_FOUND);
+      throw new BadRequestException(ERROR.USER.NOT_FOUND);
     }
     const payload = {
       type: 'refreshToken',
@@ -101,7 +101,7 @@ export class AuthService {
     console.log(time_remaining);
     //토큰의 유효 기간이 7일 이상인 경우 재발급 불가능
     if (time_remaining > 10) {
-      throw new BadRequestException(Err.TOKEN.JWT_NOT_REISSUED);
+      throw new BadRequestException(ERROR.TOKEN.JWT_NOT_REISSUED);
     }
 
     const refresh_token = CryptoJS.AES.encrypt(

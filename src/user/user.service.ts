@@ -8,7 +8,7 @@ import * as bcrypt from 'bcrypt';
 import { User } from './schema/user.schema';
 import { Model } from 'mongoose';
 import { JoinRequestDTO } from './dto/user.dto';
-import { Err } from 'src/shared/error';
+import { ERROR } from 'src/shared/error';
 import { GenreScore } from '../genre-score/schema/genre-scores.schema';
 import { GENRE_SCORES } from './constant/GENRE_SCORES';
 
@@ -92,7 +92,7 @@ export class UserService {
   async findUserById(id: string) {
     const existingUser = await this.userModel.findById(id).select('-password');
     if (!existingUser) {
-      throw new BadRequestException(Err.USER.NOT_FOUND);
+      throw new BadRequestException(ERROR.USER.NOT_FOUND);
     }
     return existingUser;
   }

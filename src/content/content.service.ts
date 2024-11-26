@@ -36,7 +36,6 @@ export class ContentService {
     const content = await this.contentModel.findById(contentId);
     const reviews = await this.reviewModel.find({ contentId: contentId });
     const result = { content, reviews };
-    console.log(result);
     return result;
   }
 
@@ -45,9 +44,10 @@ export class ContentService {
     contentType: 'tv' | 'movie' | 'all',
   ): Promise<any[]> {
     const match = typeMatch(contentType);
+
     try {
       console.log(`Searching for content with value: ${searchValue}`);
-      const result = await this.contentModel.aggregate([
+      const pipeline: PipelineStage[] = [
         {
           $search: {
             index: 'content_search_index',
@@ -57,42 +57,43 @@ export class ContentService {
                   text: {
                     query: searchValue,
                     path: 'title',
+                    fuzzy: { maxEdits: 1 },
                   },
                 },
-                {
-                  text: {
-                    query: searchValue,
-                    path: 'originalTitle',
-                  },
-                },
-                {
-                  text: {
-                    query: searchValue,
-                    path: 'overview',
-                  },
-                },
-                {
-                  text: {
-                    query: searchValue,
-                    path: 'genreIds',
-                  },
-                },
+                // {
+                //   text: {
+                //     query: searchValue,
+                //     path: 'originalTitle',
+                //     fuzzy: { maxEdits: 1 },
+                //   },
+                // },
+                // {
+                //   text: {
+                //     query: searchValue,
+                //     path: 'overview',
+                //     fuzzy: { maxEdits: 1 },
+                //   },
+                // },
+                { text: { query: searchValue, path: 'genreIds' } },
               ],
               minimumShouldMatch: 1,
             },
           },
         },
         { $addFields: { score: { $meta: 'searchScore' } } },
-        { $sort: { score: -1, popularity: -1 } },
+        { $sort: { score: -1 } },
         { $limit: 10 },
         match,
         searchContentProject,
-      ]);
+      ];
+
+      const result = await this.contentModel.aggregate(pipeline);
 
       result.forEach((el) => {
         el.genreIds = el.genreIds.map((v: string) => getGenreName(v));
       });
 
+      console.log(result);
       return result;
     } catch (error) {
       console.error('Search error:', error.message);

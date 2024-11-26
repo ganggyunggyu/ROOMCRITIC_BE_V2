@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from '../auth.service';
-import { Err } from '../../shared/error';
+import { ERROR } from '../../shared/error';
 import * as CryptoJS from 'crypto-js';
 import { UserService } from 'src/user/user.service';
 
@@ -21,15 +21,14 @@ export class JwtRefreshGuard extends AuthGuard('jwt-refresh-token') {
 
   async canActivate(context: ExecutionContext) {
     const request = context.switchToHttp().getRequest();
-    // console.log('canActive Context', request.body);
     const requestRefreshToken = request.body.refreshToken;
 
     //Body 방식
     if (requestRefreshToken === undefined) {
-      throw new BadRequestException(Err.TOKEN.NOT_SEND_REFRESH_TOKEN);
+      throw new BadRequestException(ERROR.TOKEN.NOT_SEND_REFRESH_TOKEN);
     }
     const refreshToken = requestRefreshToken.replace('Bearer ', '');
-    // console.log(refreshToken);
+
     //Header 방식
     // const { authorization } = request.headers;
     // if (authorization === undefined) {
@@ -65,13 +64,13 @@ export class JwtRefreshGuard extends AuthGuard('jwt-refresh-token') {
       switch (error.message) {
         // 토큰에 대한 오류를 판단합니다.
         case 'invalid token':
-          throw new BadRequestException(Err.TOKEN.INVALID_TOKEN);
+          throw new BadRequestException(ERROR.TOKEN.INVALID_TOKEN);
 
         case 'no permission':
-          throw new BadRequestException(Err.TOKEN.NO_PERMISSION);
+          throw new BadRequestException(ERROR.TOKEN.NO_PERMISSION);
 
         case 'jwt expired':
-          throw new BadRequestException(Err.TOKEN.JWT_EXPIRED);
+          throw new BadRequestException(ERROR.TOKEN.JWT_EXPIRED);
 
         default:
           throw new HttpException('서버 오류입니다.', 500);

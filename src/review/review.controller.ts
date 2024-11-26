@@ -148,21 +148,15 @@ export class ReviewController {
     const { reviewId, userId } = sendLikeReviewDTO;
     return this.reviewService.likeReview(reviewId, userId);
   }
-  @Post('dislike')
-  @UseGuards(JwtAuthGuard)
-  @ApiSwaggerApiBody(SendLikeReviewDTO)
-  dislikeReview(@Body() sendDislikeReviewDTO: SendLikeReviewDTO) {
-    const { reviewId, userId } = sendDislikeReviewDTO;
-    return this.reviewService.dislikeReview(reviewId, userId);
-  }
 
-  @Get('like/:userId/:reviewId')
+  @Get('like/:reviewId/:userId')
   @ApiSwaggerApiParam('userId', '6629e63db60f7e47ff09ccab')
   @ApiSwaggerApiParam('reviewId', '65dd72c77e4cfc677cf30f1c')
   getReviewLike(
     @Param('reviewId') reviewId: string,
     @Param('userId') userId: string,
   ) {
+    console.log(reviewId, userId);
     return this.reviewService.getReviewLike(reviewId, userId);
   }
 

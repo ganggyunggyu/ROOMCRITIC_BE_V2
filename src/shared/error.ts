@@ -1,4 +1,4 @@
-export const Err = {
+export const ERROR = {
   USER: {
     NOT_FOUND: {
       code: 400,
