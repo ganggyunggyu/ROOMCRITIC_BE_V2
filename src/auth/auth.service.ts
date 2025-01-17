@@ -98,7 +98,7 @@ export class AuthService {
       (tokenExp.getTime() - current_time.getTime()) / 1000 / 60 / 60,
     );
 
-    console.log(time_remaining);
+    // console.log(time_remaining);
     //토큰의 유효 기간이 7일 이상인 경우 재발급 불가능
     if (time_remaining > 10) {
       throw new BadRequestException(ERROR.TOKEN.JWT_NOT_REISSUED);

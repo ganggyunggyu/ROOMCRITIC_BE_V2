@@ -107,7 +107,6 @@ export class UserController {
   @Get('/login-check')
   @UseGuards(JwtAuthGuard)
   async fetchAuthStatus(@Req() req) {
-    console.log(req);
     return { ...req.user, isLoggedIn: true };
   }
 }

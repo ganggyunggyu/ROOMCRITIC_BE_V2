@@ -31,16 +31,22 @@ export class User extends Document {
   favoriteContentList: mongoose.Types.ObjectId[];
 
   @Prop({
-    type: [{ type: mongoose.Types.ObjectId, ref: 'Review' }],
+    type: [{ type: mongoose.Types.ObjectId, ref: 'Content' }],
     default: [],
   })
-  favoriteReviewList: mongoose.Types.ObjectId[];
+  viewedContentList: mongoose.Types.ObjectId[];
 
   @Prop({
     type: [{ type: mongoose.Types.ObjectId, ref: 'Content' }],
     default: [],
   })
-  viewedContentList: mongoose.Types.ObjectId[];
+  wishContentList: mongoose.Types.ObjectId[];
+
+  @Prop({
+    type: [{ type: mongoose.Types.ObjectId, ref: 'Review' }],
+    default: [],
+  })
+  favoriteReviewList: mongoose.Types.ObjectId[];
 
   createdAt: Date;
   updatedAt: Date;
