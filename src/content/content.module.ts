@@ -6,14 +6,15 @@ import { MovieSchema } from 'src/movie/schema/movie.schema';
 import { TvSchema } from 'src/tv/schema/tv.schema';
 import { ReviewSchema } from 'src/review/schema/review.schema';
 import { ContentSchema } from './schema/content.schema';
+import { UserSchema } from 'src/user/schema/user.schema';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
+      { name: 'User', schema: UserSchema },
       { name: 'Movie', schema: MovieSchema },
       { name: 'Tv', schema: TvSchema },
       { name: 'Review', schema: ReviewSchema },
-
       { name: 'Content', schema: ContentSchema },
     ]),
   ],
