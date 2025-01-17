@@ -91,6 +91,31 @@ export class ContentController {
     return this.contentService.getPopulaContent(+skip, limit, contentType);
   }
 
+  @Get('/recently/created-review')
+  @ApiQuery({
+    name: 'skip',
+    example: 0,
+    required: false,
+  })
+  @ApiQuery({
+    name: 'limit',
+    example: 10,
+    required: false,
+  })
+  @ApiQuery({
+    name: 'contentType',
+    example: 'movie',
+    required: false,
+  })
+  async getRecentlyReview(
+    @Query('skip') skip: number,
+    @Query('limit') limit: number,
+    @Query('content_type') contentType: 'tv' | 'movie',
+  ) {
+    console.log(skip);
+    return this.contentService.getRecentlyReview(+skip, limit, contentType);
+  }
+
   @Get('wish/:userId/:contentId')
   @ApiSwaggerApiParam('userId', '6629e63db60f7e47ff09ccab')
   @ApiSwaggerApiParam('contentId', '65dbf74e13f52a0d8acd89a7')
@@ -99,11 +124,13 @@ export class ContentController {
     @Param('contentId') contentId: string,
   ) {}
 
-  @Post('wish')
+  @Post('wish/:userId/:contentId')
   // @UseGuards(JwtAuthGuard)
-  async addContentWish(@Body() addContentWishDTO) {
-    const { userId, contentId } = addContentWishDTO;
-  }
+  async addContentWish(
+    @Param('userId') userId: string,
+    @Param('contentId') contentId: string,
+  ) {}
+
   @Delete('wish/:userId/:contentId')
   // @UseGuards(JwtAuthGuard)
   @ApiSwaggerApiParam('userId', '6629e63db60f7e47ff09ccab')
@@ -112,6 +139,7 @@ export class ContentController {
     @Param('userId') userId: string,
     @Param('contentId') contentId: string,
   ) {}
+
   @Get('wish/:userId')
   @ApiSwaggerApiParam('userId', '6629e63db60f7e47ff09ccab')
   findWishContentByUser(@Param('userId') userId: string) {}
