@@ -2,8 +2,8 @@ import { Controller, Get } from '@nestjs/common';
 
 @Controller()
 export class AppController {
-  @Get('/')
+  @Get('/aws-test')
   test() {
-    return 'test';
+    return true;
   }
 }
