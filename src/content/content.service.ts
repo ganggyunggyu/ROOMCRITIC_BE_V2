@@ -1,14 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model, PipelineStage } from 'mongoose';
+import { InjectModel, MongooseModule } from '@nestjs/mongoose';
+import mongoose, { Model, PipelineStage } from 'mongoose';
 import { Movie } from 'src/movie/schema/movie.schema';
 import { Review } from 'src/review/schema/review.schema';
 import { Tv } from 'src/tv/schema/tv.schema';
 import { Content } from './schema/content.schema';
 import { getGenreName } from 'src/user/constant/GENRE_SCORES';
 import { typeMatch } from './lib/typeMatch';
+import { User } from 'src/user/schema/user.schema';
 
-export const searchContentProject = {
+export const searchContentProject: PipelineStage = {
   $project: {
     _id: 1,
     title: 1,
@@ -29,7 +30,8 @@ export class ContentService {
     @InjectModel('Tv') private readonly tvModel: Model<Tv>,
     @InjectModel('Movie') private readonly movieModel: Model<Movie>,
     @InjectModel('Review') private readonly reviewModel: Model<Review>,
-    @InjectModel('Content') private readonly contentModel: Model<Content>,
+    @InjectModel('Content') private contentModel: Model<Content>,
+    @InjectModel('User') private userModel: Model<User>,
   ) {}
 
   async getContentByOneWithReview(contentId: string) {
@@ -60,20 +62,6 @@ export class ContentService {
                     fuzzy: { maxEdits: 1 },
                   },
                 },
-                // {
-                //   text: {
-                //     query: searchValue,
-                //     path: 'originalTitle',
-                //     fuzzy: { maxEdits: 1 },
-                //   },
-                // },
-                // {
-                //   text: {
-                //     query: searchValue,
-                //     path: 'overview',
-                //     fuzzy: { maxEdits: 1 },
-                //   },
-                // },
                 { text: { query: searchValue, path: 'genreIds' } },
               ],
               minimumShouldMatch: 1,
@@ -93,7 +81,6 @@ export class ContentService {
         el.genreIds = el.genreIds.map((v: string) => getGenreName(v));
       });
 
-      console.log(result);
       return result;
     } catch (error) {
       console.error('Search error:', error.message);
@@ -159,11 +146,72 @@ export class ContentService {
       console.error(error);
     }
   }
+  async getRecentlyReview(
+    skip: number,
+    limit: number = 10,
+    contentType: 'tv' | 'movie',
+  ) {
+    try {
+      const recentlyCreateReviewContentList = [];
+
+      const recentlyCreateReviewByContentIdList =
+        await this.reviewModel.aggregate([
+          {
+            $match: {
+              ...(contentType && { contentType }),
+            },
+          },
+          { $sort: { createdAt: -1 } },
+          {
+            $group: { _id: '$contentId', createdAt: { $first: '$createdAt' } },
+          },
+          { $sort: { createdAt: -1 } },
+
+          { $project: { contentId: '$contentId', reviewId: '$_id' } },
+          { $limit: +limit },
+          { $skip: +skip },
+        ]);
+
+      for (const contentIdObject of recentlyCreateReviewByContentIdList) {
+        const content = await this.contentModel.findById(contentIdObject);
+        recentlyCreateReviewContentList.push(content);
+      }
+
+      // if (recentlyCreateReviewContentList.length === 0) {
+      //   return Error('다음 콘텐츠가 없습니다.');
+      // }
+
+      return recentlyCreateReviewContentList;
+    } catch (error) {
+      console.error(error);
+    }
+  }
 
   async findContentGenreIds(contentId: string) {
     const genreIds = await this.contentModel.findById(contentId, {
       genreIds: 1,
     });
     return genreIds;
+  }
+
+  async contentWish(contentId: string, userId: string) {
+    const content = await this.contentModel.findById(contentId);
+
+    const user = await this.userModel.findById(userId);
+    const userWishList = [...user.wishContentList];
+
+    const contentObjectId = new mongoose.Types.ObjectId(String(content._id));
+
+    const isMatch = userWishList.includes(contentObjectId);
+
+    if (isMatch) {
+      const updateUser = userWishList.filter(
+        (contentId) => contentId === content._id,
+      );
+    }
+
+    if (!isMatch) {
+      const updateUser = user.wishContentList.push(contentObjectId);
+    }
   }
 }
