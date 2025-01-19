@@ -205,7 +205,7 @@ export class ReviewService {
         }),
       });
 
-      const { genreIds } = await this.contentService.findContentGenreIds(
+      const { genreIds } = await this.contentService.getContentGenreIds(
         newReview.contentId.toString(),
       );
 
@@ -233,7 +233,7 @@ export class ReviewService {
       ];
 
       const { genreIds } =
-        await this.contentService.findContentGenreIds(contentId);
+        await this.contentService.getContentGenreIds(contentId);
 
       const deleteResult = await this.reviewModel.findByIdAndDelete(reviewId);
       if (!deleteResult) {
@@ -266,7 +266,7 @@ export class ReviewService {
 
     if (prevScore[0]) {
       const score = reviewUpdateDTO.grade - prevScore[0];
-      const { genreIds } = await this.contentService.findContentGenreIds(
+      const { genreIds } = await this.contentService.getContentGenreIds(
         (
           await this.getReviewById(reviewUpdateDTO.reviewId)
         ).contentId.toString(),
@@ -286,7 +286,7 @@ export class ReviewService {
     return true;
   }
 
-  async getAverageGrade(contentId) {
+  async getAverageGrade(contentId: string) {
     const reviews = await this.reviewModel.find({ contentId: contentId });
 
     const length = reviews.length;

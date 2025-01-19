@@ -27,8 +27,6 @@ export const searchContentProject: PipelineStage = {
 @Injectable()
 export class ContentService {
   constructor(
-    @InjectModel('Tv') private readonly tvModel: Model<Tv>,
-    @InjectModel('Movie') private readonly movieModel: Model<Movie>,
     @InjectModel('Review') private readonly reviewModel: Model<Review>,
     @InjectModel('Content') private contentModel: Model<Content>,
     @InjectModel('User') private userModel: Model<User>,
@@ -48,7 +46,6 @@ export class ContentService {
     const match = typeMatch(contentType);
 
     try {
-      console.log(`Searching for content with value: ${searchValue}`);
       const pipeline: PipelineStage[] = [
         {
           $search: {
@@ -132,20 +129,6 @@ export class ContentService {
     return result;
   }
 
-  async getTopRatedMovies(skip: number, limit: number = 10) {
-    try {
-      const pipeline: PipelineStage[] = [
-        { $sort: { vote_count: -1, vote_average: -1 } },
-        { $skip: +skip },
-        { $limit: +limit },
-      ];
-      const result = await this.movieModel.aggregate(pipeline);
-
-      return result;
-    } catch (error) {
-      console.error(error);
-    }
-  }
   async getRecentlyReviewCreateContent(
     skip: number,
     limit: number = 10,
@@ -170,8 +153,6 @@ export class ContentService {
           { $project: { contentId: '$contentId' } },
         ]);
 
-      console.log(recentlyCreateReviewByContentIdList, skip);
-
       for (const contentIdObject of recentlyCreateReviewByContentIdList) {
         const content = await this.contentModel.findById(contentIdObject);
         recentlyCreateReviewContentList.push(content);
@@ -183,7 +164,7 @@ export class ContentService {
     }
   }
 
-  async findContentGenreIds(contentId: string) {
+  async getContentGenreIds(contentId: string) {
     const genreIds = await this.contentModel.findById(contentId, {
       genreIds: 1,
     });
@@ -210,4 +191,6 @@ export class ContentService {
       const updateUser = user.wishContentList.push(contentObjectId);
     }
   }
+
+  async getContentFilter(userId: string) {}
 }
