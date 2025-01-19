@@ -6,12 +6,8 @@ import {
   FindMovieReviewsDTO,
   ReviewCreateDTO,
   ReviewUpdateDTO,
-} from './dto/request';
+} from './dto/review.dto';
 import { lessCursorQuery } from 'src/shared/paginate/cursor-paginate';
-import { ERROR } from 'src/shared/error';
-import { GenreScore } from 'src/genre-score/schema/genre-scores.schema';
-import { Movie } from 'src/movie/schema/movie.schema';
-import { Tv } from 'src/tv/schema/tv.schema';
 import { GenreScoreService } from 'src/genre-score/genre-score.service';
 import { User } from 'src/user/schema/user.schema';
 import { ContentService } from 'src/content/content.service';
@@ -22,17 +18,14 @@ export class ReviewService {
     private readonly genreScoreService: GenreScoreService,
     private readonly contentService: ContentService,
     @InjectModel('Review') private reviewModel: Model<Review>,
-    @InjectModel('Movie') private movieModel: Model<Movie>,
-    @InjectModel('Tv') private tvModel: Model<Tv>,
-    @InjectModel('GenreScore') private genreScoreModel: Model<GenreScore>,
     @InjectModel('User') private userModel: Model<User>,
   ) {}
 
-  async getUserReviewLength(userId) {
+  async getUserReviewLength(userId: string) {
     const userReviews = await this.reviewModel.find({ userId: userId });
     return userReviews.length;
   }
-  async getContentReviewLength(contentId) {
+  async getContentReviewLength(contentId: string) {
     return (await this.reviewModel.find({ contentId: contentId })).length;
   }
 
@@ -171,6 +164,11 @@ export class ReviewService {
           isSuccess: true,
         };
       }
+
+      return {
+        status: 404,
+        isSuccess: false,
+      };
     } catch (error) {
       console.error(error);
       return {
@@ -190,7 +188,7 @@ export class ReviewService {
 
       return isAleayLiked;
     } catch (error) {
-      console.log(error);
+      console.error(error);
       return false;
     }
   }
