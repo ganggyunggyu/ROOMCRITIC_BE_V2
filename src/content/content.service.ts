@@ -70,7 +70,7 @@ export class ContentService {
         },
         { $addFields: { score: { $meta: 'searchScore' } } },
         { $sort: { score: -1 } },
-        { $limit: 10 },
+        // { $limit: 10 },
         match,
         searchContentProject,
       ];
