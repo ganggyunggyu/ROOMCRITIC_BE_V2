@@ -161,24 +161,21 @@ export class ContentService {
               ...(contentType && { contentType }),
             },
           },
-          { $sort: { createdAt: -1 } },
           {
             $group: { _id: '$contentId', createdAt: { $first: '$createdAt' } },
           },
           { $sort: { createdAt: -1 } },
-          { $project: { contentId: '$contentId' } },
-          { $limit: +limit },
           { $skip: +skip },
+          { $limit: limit },
+          { $project: { contentId: '$contentId' } },
         ]);
+
+      console.log(recentlyCreateReviewByContentIdList, skip);
 
       for (const contentIdObject of recentlyCreateReviewByContentIdList) {
         const content = await this.contentModel.findById(contentIdObject);
         recentlyCreateReviewContentList.push(content);
       }
-
-      // if (recentlyCreateReviewContentList.length === 0) {
-      //   return Error('다음 콘텐츠가 없습니다.');
-      // }
 
       return recentlyCreateReviewContentList;
     } catch (error) {
