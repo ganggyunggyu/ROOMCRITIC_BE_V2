@@ -14,7 +14,7 @@ import {
   ReviewCreateDTO,
   ReviewUpdateDTO,
   SendLikeReviewDTO,
-} from './dto/request';
+} from './dto/review.dto';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
 import {
   ApiSwaggerApiBody,
