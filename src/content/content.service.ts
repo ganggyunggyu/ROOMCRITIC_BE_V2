@@ -146,7 +146,7 @@ export class ContentService {
       console.error(error);
     }
   }
-  async getRecentlyReview(
+  async getRecentlyReviewCreateContent(
     skip: number,
     limit: number = 10,
     contentType: 'tv' | 'movie',
@@ -166,8 +166,7 @@ export class ContentService {
             $group: { _id: '$contentId', createdAt: { $first: '$createdAt' } },
           },
           { $sort: { createdAt: -1 } },
-
-          { $project: { contentId: '$contentId', reviewId: '$_id' } },
+          { $project: { contentId: '$contentId' } },
           { $limit: +limit },
           { $skip: +skip },
         ]);

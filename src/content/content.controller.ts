@@ -112,8 +112,11 @@ export class ContentController {
     @Query('limit') limit: number,
     @Query('content_type') contentType: 'tv' | 'movie',
   ) {
-    console.log(skip);
-    return this.contentService.getRecentlyReview(+skip, limit, contentType);
+    return this.contentService.getRecentlyReviewCreateContent(
+      +skip,
+      limit,
+      contentType,
+    );
   }
 
   @Get('wish/:userId/:contentId')
