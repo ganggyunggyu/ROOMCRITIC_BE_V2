@@ -106,7 +106,7 @@ export class ContentService {
         ];
 
     const result = await this.contentModel.aggregate(pipeline);
-    return result;
+    return { contentList: result };
   }
 
   async getLatestContent(
@@ -126,7 +126,7 @@ export class ContentService {
       { $project: { __v: 0, voteCounte: 0, popularity: 0, adult: 0 } },
     ];
     const result = await this.contentModel.aggregate(pipeline);
-    return result;
+    return { contentList: result };
   }
 
   async getRecentlyReviewCreateContent(
@@ -158,7 +158,7 @@ export class ContentService {
         recentlyCreateReviewContentList.push(content);
       }
 
-      return recentlyCreateReviewContentList;
+      return { contentList: recentlyCreateReviewContentList };
     } catch (error) {
       console.error(error);
     }
