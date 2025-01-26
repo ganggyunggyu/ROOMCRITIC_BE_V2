@@ -13,6 +13,7 @@ describe('AuthService', () => {
   });
 
   it('should be defined', () => {
+    service.createAccessToken();
     expect(service).toBeDefined();
   });
 });

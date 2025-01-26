@@ -13,6 +13,7 @@ describe('UserService', () => {
   });
 
   it('should be defined', () => {
+    service.comparePasswords();
     expect(service).toBeDefined();
   });
 });
